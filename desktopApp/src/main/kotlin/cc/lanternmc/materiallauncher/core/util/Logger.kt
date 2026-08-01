@@ -1,0 +1,52 @@
+/*
+ * Copyright (C) 2026 Mark <github@xxdmkbmark> & Pidan <github@bretren>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package cc.lanternmc.materiallauncher.core.util
+
+import java.io.FileDescriptor
+import java.io.FileOutputStream
+import java.io.PrintStream
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
+
+/**
+ * 简单的彩色无依赖日志。
+ */
+object Logger {
+    enum class Level { DEBUG, INFO, WARN, ERROR }
+
+    @Volatile
+    var level: Level = Level.INFO
+
+    private val fmt = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+
+    init {
+        // Windows 下 JVM 默认按平台编码(GBK)输出，中文在 UTF-8 控制台/IDE 里会乱码，这里强制 UTF-8。
+        System.setOut(PrintStream(FileOutputStream(FileDescriptor.out), true, Charsets.UTF_8))
+        System.setErr(PrintStream(FileOutputStream(FileDescriptor.err), true, Charsets.UTF_8))
+    }
+
+    fun debug(message: String) = log(Level.DEBUG, message)
+    fun info(message: String) = log(Level.INFO, message)
+    fun warn(message: String) = log(Level.WARN, message)
+    fun error(message: String) = log(Level.ERROR, message)
+
+    private fun log(level: Level, message: String) {
+        if (level.ordinal < this.level.ordinal) return
+        val line = "[${LocalDateTime.now().format(fmt)}] [${level.name}] $message"
+        if (level >= Level.WARN) System.err.println(line) else println(line)
+    }
+}
