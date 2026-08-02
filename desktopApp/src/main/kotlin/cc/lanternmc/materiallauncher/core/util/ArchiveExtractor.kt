@@ -48,7 +48,8 @@ object ArchiveExtractor {
 
     /**
      * 解压 zip / tar.gz 到 destDir。
-     * 若归档含单个顶层目录，则解压到 destDir 的父目录，使顶层目录名即为 destDir。
+     * 若归档含单个顶层目录，则剥掉该顶层目录，使 destDir 本身就是解压根目录。
+     * 这样无论归档内目录名是什么（如 JDK8 的 jdk8u392-b08 与目标名不同），destDir 内都是 JDK 根。
      */
     fun extractArchive(archivePath: String, destDir: String) {
         if (archivePath.endsWith(".zip", ignoreCase = true)) {
@@ -62,11 +63,15 @@ object ArchiveExtractor {
 
     private fun extractZip(archivePath: String, destDir: String) {
         val topDir = firstZipTopDir(archivePath)
-        val base = if (topDir != null) File(destDir).parentFile?.absolutePath ?: destDir else destDir
         ZipFile(archivePath).use { zip ->
             for (entry in zip.entries()) {
-                val name = entry.name
-                val target = safeJoin(base, name) ?: continue
+                var name = entry.name.replace('\\', '/')
+                if (topDir != null) {
+                    if (name == topDir) continue
+                    if (name.startsWith("$topDir/")) name = name.removePrefix("$topDir/")
+                }
+                if (name.isEmpty()) continue
+                val target = safeJoin(destDir, name) ?: continue
                 if (entry.isDirectory) {
                     File(target).mkdirs()
                     continue
@@ -81,14 +86,18 @@ object ArchiveExtractor {
 
     private fun extractTarGz(archivePath: String, destDir: String) {
         val topDir = firstTarTopDir(archivePath)
-        val base = if (topDir != null) File(destDir).parentFile?.absolutePath ?: destDir else destDir
         FileInputStream(archivePath).use { fileInput ->
             GzipCompressorInputStream(fileInput).use { gzip ->
                 TarArchiveInputStream(gzip).use { tar ->
                     while (true) {
                         val entry = tar.nextEntry ?: break
-                        val name = entry.name
-                        val target = safeJoin(base, name) ?: continue
+                        var name = entry.name.replace('\\', '/')
+                        if (topDir != null) {
+                            if (name == topDir) continue
+                            if (name.startsWith("$topDir/")) name = name.removePrefix("$topDir/")
+                        }
+                        if (name.isEmpty()) continue
+                        val target = safeJoin(destDir, name) ?: continue
                         if (entry.isDirectory) {
                             File(target).mkdirs()
                             continue

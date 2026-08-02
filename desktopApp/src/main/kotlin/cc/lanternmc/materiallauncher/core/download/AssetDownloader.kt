@@ -57,6 +57,7 @@ class AssetDownloader {
         Logger.info("正在并发检查/下载 Asset 文件，共 ${indexData.objects.size} 个")
 
         val semaphore = Semaphore(MAX_CONCURRENCY)
+        val failures = java.util.concurrent.atomic.AtomicInteger(0)
         coroutineScope {
             indexData.objects.forEach { (_, asset) ->
                 launch(Dispatchers.IO) {
@@ -70,10 +71,29 @@ class AssetDownloader {
                         try {
                             HttpUtil.downloadFile(url, targetFile.absolutePath) { _, _ -> }
                         } catch (e: Exception) {
+                            failures.incrementAndGet()
                             Logger.warn("下载 Asset 失败: ${e.message}")
                         }
                     }
                 }
+            }
+        }
+        if (failures.get() > 0) {
+            throw IllegalStateException("${failures.get()} 个资源文件下载失败，无法启动")
+        }
+
+        if (indexData.virtual) {
+            Logger.info("资源索引 ${assetIndex.id} 为 legacy 虚拟布局，正在生成 virtual 目录...")
+            val virtualRoot = File(assetsDir, "virtual/${assetIndex.id}")
+            indexData.objects.forEach { (path, asset) ->
+                val src = File(File(objectsDir, asset.hash.take(2)), asset.hash)
+                if (!src.isFile) {
+                    throw IllegalStateException("资源缺失，无法生成 virtual 目录: $path")
+                }
+                val target = File(virtualRoot, path)
+                if (target.isFile && target.length() == asset.size) return@forEach
+                target.parentFile?.mkdirs()
+                src.copyTo(target, overwrite = true)
             }
         }
         Logger.info("官方 Assets 资源全部校验/补齐完毕！")

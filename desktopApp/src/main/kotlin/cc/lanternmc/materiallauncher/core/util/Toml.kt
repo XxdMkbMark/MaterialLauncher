@@ -18,13 +18,12 @@ package cc.lanternmc.materiallauncher.core.util
 
 /**
  * 极简 TOML 读写，仅支持本项目用到的语法：
- * `key = "value"` / `[section]` / `[[array]]`。
+ * `key = "value"` / `section` / `array`。
  */
 object Toml {
     class Document {
         private val table = LinkedHashMap<String, Section>()
         fun section(name: String): Section = table.getOrPut(name) { Section() }
-        fun sections(): Set<String> = table.keys
     }
 
     class Section {

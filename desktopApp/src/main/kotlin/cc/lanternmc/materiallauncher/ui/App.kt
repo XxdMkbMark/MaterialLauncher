@@ -127,7 +127,8 @@ fun App(backend: LauncherBackend) {
 
             LauncherSidebar(
                 modifier = Modifier.align(Alignment.CenterStart),
-                categories = listOf(                    SidebarCategory(
+                categories = listOf(
+                    SidebarCategory(
                         label = "启动",
                         icon = Icons.Default.PlayArrow,
                         items = listOf(
@@ -152,6 +153,7 @@ fun App(backend: LauncherBackend) {
                         items = listOf(
                             SidebarItem("MC 路径") { dialog = SettingsDialog.MC_PATH },
                             SidebarItem("MC 版本") { dialog = SettingsDialog.MC_VERSION },
+                            SidebarItem("用户名") { dialog = SettingsDialog.USERNAME },
                             SidebarItem("Java") { dialog = SettingsDialog.JAVA },
                             SidebarItem("内存") { dialog = SettingsDialog.MEM },
                         ),

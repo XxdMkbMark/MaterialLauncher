@@ -47,6 +47,7 @@ interface LauncherApi {
 
     // ---- 游戏启动 ----
     suspend fun launchMinecraft(request: LaunchRequest): Int
+    suspend fun resolveLaunchJava(gameDir: String, versionId: String, preferred: String): String
 
     // ---- 系统集成 ----
     suspend fun openDirectoryDialog(title: String): String?

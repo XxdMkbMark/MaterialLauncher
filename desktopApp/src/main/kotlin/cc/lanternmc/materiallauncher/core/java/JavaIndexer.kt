@@ -62,6 +62,25 @@ class JavaIndexer(
         }
     }
 
+    /**
+     * 若当前没有任何已探测结果（如首次运行缓存为空），立即同步做一次"快速探测"
+     * （JAVA_HOME / PATH / 注册表 / 常见安装目录），避免首次启动时无 Java 可选。
+     * 只执行一次；返回后 [cachedResults] 至少包含常见路径下的 Java。
+     */
+    fun ensureQuickProbe() {
+        synchronized(lock) {
+            if (results.isNotEmpty() || running) return
+        }
+        val quick = (JavaFinder.platformJavaCandidates() + JavaFinder.environmentJavaCandidates()).distinct()
+        if (quick.isEmpty()) return
+        Logger.info("首次运行，正在快速探测常见路径下的 Java (${quick.size} 个候选)...")
+        val found = probeAll(quick)
+        for (installation in found) {
+            emit(LauncherEvent.JavaIndexFound(installation))
+        }
+        mergeResults(found)
+    }
+
     fun cacheIsFresh(): Boolean {
         synchronized(lock) {
             val indexed = indexedAt ?: return false
@@ -85,7 +104,7 @@ class JavaIndexer(
         return true
     }
 
-    private suspend fun run() {
+    private fun run() {
         try {
             val startedAt = System.currentTimeMillis()
             val cachedCount = cachedResults().size
@@ -105,7 +124,7 @@ class JavaIndexer(
             saveSnapshot(completed = false)
 
             // 阶段二：全盘扫描
-            val (candidates, scanned) = scanJavaIndex(roots, workers) { directoriesScanned, candidatesFound ->
+            val (candidates, _) = scanJavaIndex(roots, workers) { directoriesScanned, candidatesFound ->
                 emit(
                     LauncherEvent.JavaIndexProgress(
                         directoriesScanned = directoriesScanned,
@@ -243,7 +262,7 @@ class JavaIndexer(
         val cands = mutableListOf<String>()
         val stream = try {
             Files.newDirectoryStream(Paths.get(directory))
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             return Pair(emptyList(), emptyList())
         }
         stream.use { entries ->

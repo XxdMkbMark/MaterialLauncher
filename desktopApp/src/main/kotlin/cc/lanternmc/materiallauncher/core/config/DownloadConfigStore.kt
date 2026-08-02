@@ -50,6 +50,7 @@ class DownloadConfigStore(private val paths: AppDataPaths) {
         val defaults = defaults()
         val mc = doc.section("minecraft")
         val java = doc.section("java")
+        val account = doc.section("account")
         return DownloadConfig(
             minecraft = DownloadPathConfig(
                 path = mc.values["path"] ?: defaults.minecraft.path,
@@ -59,6 +60,7 @@ class DownloadConfigStore(private val paths: AppDataPaths) {
                 path = java.values["path"] ?: defaults.java.path,
                 source = java.values["source"] ?: "launcher",
             ),
+            username = account.values["username"] ?: defaults.username,
         )
     }
 
@@ -73,6 +75,9 @@ class DownloadConfigStore(private val paths: AppDataPaths) {
             appendLine("[java]")
             appendLine("path = ${Toml.quote(config.java.path)}")
             appendLine("source = ${Toml.quote(config.java.source)}")
+            appendLine()
+            appendLine("[account]")
+            appendLine("username = ${Toml.quote(config.username)}")
         }
         val tmp = File("${paths.config}.tmp")
         tmp.writeText(content)

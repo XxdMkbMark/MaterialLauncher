@@ -29,6 +29,13 @@ data class VersionJson(
     val assetIndex: AssetIndexInfo = AssetIndexInfo(id = "", url = ""),
     val downloads: ClientDownloads? = null,
     val libraries: List<Library> = emptyList(),
+    val javaVersion: JavaVersionInfo? = null,
+)
+
+@Serializable
+data class JavaVersionInfo(
+    val majorVersion: Int = 8,
+    val component: String = "",
 )
 
 @Serializable
@@ -95,6 +102,7 @@ data class Artifact(
 @Serializable
 data class AssetIndex(
     val objects: Map<String, AssetObject> = emptyMap(),
+    val virtual: Boolean = false,
 )
 
 @Serializable
@@ -125,20 +133,20 @@ data class ManifestVersion(
 
 @Serializable
 data class JavaFeatureRelease(
-    val version: JavaVersionData = JavaVersionData(openjdk_version = "", semver = ""),
+    val version: JavaVersionData = JavaVersionData(openjdkVersion = "", semver = ""),
     val binary: JavaBinary? = null,
 )
 
 @Serializable
 data class JavaVersionData(
-    val openjdk_version: String = "",
+    val openjdkVersion: String = "",
     val semver: String = "",
 )
 
 @Serializable
 data class JavaBinary(
     val architecture: String = "",
-    val image_type: String = "",
+    val imageType: String = "",
     val os: String = "",
     @SerialName("package")
     val archive: JavaPackage = JavaPackage(link = "", size = 0, name = ""),

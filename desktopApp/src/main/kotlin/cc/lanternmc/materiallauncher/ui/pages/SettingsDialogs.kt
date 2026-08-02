@@ -51,7 +51,7 @@ import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.ui.components.DropdownField
 
-enum class SettingsDialog { MC_PATH, MC_VERSION, JAVA, MEM }
+enum class SettingsDialog { MC_PATH, MC_VERSION, JAVA, MEM, USERNAME }
 
 @Composable
 fun SettingsDialogs(
@@ -70,6 +70,8 @@ fun SettingsDialogs(
     memValue: Int,
     onMemValueChange: (Int) -> Unit,
     onApplyMcPath: (source: String, path: String) -> Unit,
+    username: String,
+    onApplyUsername: (String) -> Unit,
 ) {
     val mcSourceDraft = remember { mutableStateOf("default") }
     val customPath = remember { mutableStateOf("") }
@@ -170,6 +172,28 @@ fun SettingsDialogs(
                     horizontalArrangement = Arrangement.End,
                 ) {
                     TextButton(onClick = onDismiss) { Text("关闭") }
+                }
+            }
+        }
+    }
+
+    if (dialog == SettingsDialog.USERNAME) {
+        Dialog(onDismissRequest = onDismiss) {
+            SettingsCard(title = "用户名设置") {
+                var draft by remember { mutableStateOf(username) }
+                androidx.compose.material3.OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("游戏内昵称") },
+                )
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    horizontalArrangement = Arrangement.End,
+                ) {
+                    TextButton(onClick = onDismiss) { Text("取消") }
+                    Button(onClick = { onApplyUsername(draft.trim()) }) { Text("应用") }
                 }
             }
         }

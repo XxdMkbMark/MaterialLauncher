@@ -79,7 +79,7 @@ fun LaunchPage(
             val versions = api.getInstalledMinecraftVersions(path)
             mcVersions.clear()
             mcVersions.addAll(versions)
-            if (versions.isNotEmpty()) selectedMcVersion = versions.first()
+            selectedMcVersion = versions.firstOrNull() ?: ""
         }
     }
 
@@ -104,17 +104,30 @@ fun LaunchPage(
             status = "启动中..."
             scope.launch {
                 try {
+                    val javaPath = api.resolveLaunchJava(
+                        gameDir = config?.minecraft?.path.orEmpty(),
+                        versionId = selectedMcVersion,
+                        preferred = selectedJava,
+                    )
+                    val javaLabel = javas.firstOrNull { it.path == javaPath }?.version
+                        ?.let { "Java $it" }
+                        ?: javaPath
+                    if (javaPath != selectedJava) {
+                        status = "已自动切换 Java: $javaLabel"
+                        selectedJava = javaPath
+                        api.logInfo("自动切换 Java: ${selectedJava} -> $javaPath ($javaLabel)")
+                    }
                     val pid = api.launchMinecraft(
                         LaunchRequest(
-                            javaPath = selectedJava,
+                            javaPath = javaPath,
                             gameDir = config?.minecraft?.path.orEmpty(),
                             versionId = selectedMcVersion,
-                            username = "TestUser",
+                            username = config?.username.orEmpty().ifBlank { "TestUser" },
                             maxMemory = "${memValue}M",
                             isolateVersion = true,
                         ),
                     )
-                    status = "已启动, PID=$pid"
+                    status = "已启动, PID=$pid ($javaLabel)"
                 } catch (e: Exception) {
                     status = "启动失败: ${e.message}"
                     api.logError("启动失败: $e")
@@ -224,6 +237,12 @@ fun LaunchPage(
                 SettingCard("Java", selectedJava.ifBlank { "未选择" }, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.JAVA) }
                 SettingCard("内存", memLabel, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.MEM) }
             }
+            Row(
+                modifier = Modifier.weight(1f).fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                SettingCard("用户名", config?.username?.ifBlank { "TestUser" } ?: "TestUser", Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.USERNAME) }
+            }
         }
     }
 
@@ -259,6 +278,15 @@ fun LaunchPage(
                 )
                 updateConfig(updated)
                 refreshMcVersions()
+                onOpenSettingsDialog(null)
+            }
+        },
+        username = config?.username.orEmpty().ifBlank { "TestUser" },
+        onApplyUsername = { newUsername ->
+            scope.launch {
+                val cfg = config ?: api.getDownloadConfig()
+                val updated = cfg.copy(username = newUsername.ifBlank { "TestUser" })
+                updateConfig(updated)
                 onOpenSettingsDialog(null)
             }
         },

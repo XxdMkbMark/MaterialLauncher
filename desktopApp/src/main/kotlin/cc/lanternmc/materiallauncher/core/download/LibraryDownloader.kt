@@ -23,7 +23,6 @@ import cc.lanternmc.materiallauncher.core.model.Library
 import cc.lanternmc.materiallauncher.core.model.LibraryRule
 import cc.lanternmc.materiallauncher.core.util.ArchiveExtractor
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
-import cc.lanternmc.materiallauncher.core.util.Logger
 import cc.lanternmc.materiallauncher.core.util.Os
 import cc.lanternmc.materiallauncher.core.util.Sha1
 import cc.lanternmc.materiallauncher.core.util.currentOs
@@ -83,6 +82,7 @@ class LibraryDownloader {
         val downloads = library.downloads ?: return Pair(null, false)
         if (library.natives.isNotEmpty()) {
             val classifier = library.natives[minecraftOsName()] ?: return Pair(null, true)
+
             val resolved = classifier.replace("\${arch}", minecraftArchBits())
             val artifact = downloads.classifiers[resolved] ?: return Pair(null, true)
             return Pair(artifact, true)
@@ -123,7 +123,10 @@ class LibraryDownloader {
         if (rule.features.isNotEmpty()) return false
         val os = rule.os ?: return true
         if (os.name != null && os.name != minecraftOsName()) return false
-        if (os.version != null) return false
+        if (os.version != null) {
+            val osVersion = System.getProperty("os.version") ?: return false
+            if (!runCatching { Pattern.matches(os.version, osVersion) }.getOrDefault(false)) return false
+        }
         if (os.arch != null) {
             val matched = runCatching { Pattern.matches(os.arch, minecraftArchName()) }.getOrDefault(false)
             return matched

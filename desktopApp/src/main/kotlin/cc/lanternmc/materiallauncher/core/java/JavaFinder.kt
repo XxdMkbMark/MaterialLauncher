@@ -17,9 +17,15 @@
 package cc.lanternmc.materiallauncher.core.java
 
 import java.io.File
+import java.nio.file.FileVisitOption
+import java.nio.file.FileVisitResult
 import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.SimpleFileVisitor
+import java.nio.file.attribute.BasicFileAttributes
 import java.time.OffsetDateTime
+import java.util.EnumSet
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import cc.lanternmc.materiallauncher.api.JavaInstallation
@@ -134,29 +140,37 @@ object JavaFinder {
 
     /**
      * 深度受限的目录遍历，找到 `bin/java(.exe)` 候选。
+     * 使用 walkFileTree 在遍历前剪枝（跳过系统/缓存目录），避免无谓扫描。
      */
     fun findJavaCandidatesLimited(roots: List<String>, maxDepth: Int): List<String> {
         val result = mutableListOf<String>()
         for (root in roots) {
             val rootPath = Paths.get(root)
             if (!Files.isDirectory(rootPath)) continue
-            val baseNameCount = rootPath.toAbsolutePath().normalize().nameCount
             runCatching {
-                Files.walk(rootPath, maxDepth).use { stream ->
-                    stream.forEach { path ->
-                        if (Files.isDirectory(path)) {
-                            if (path != rootPath && shouldSkipDirectory(path.fileName?.toString().orEmpty())) {
-                                return@forEach
+                Files.walkFileTree(
+                    rootPath,
+                    EnumSet.noneOf(FileVisitOption::class.java),
+                    maxDepth,
+                    object : SimpleFileVisitor<Path>() {
+                        override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+                            val name = dir.fileName?.toString().orEmpty()
+                            if (dir != rootPath && shouldSkipDirectory(name)) {
+                                return FileVisitResult.SKIP_SUBTREE
                             }
-                            return@forEach
+                            return FileVisitResult.CONTINUE
                         }
-                        val name = path.fileName?.toString().orEmpty()
-                        val inBin = path.parent?.fileName?.toString()?.equals("bin", ignoreCase = true) == true
-                        if (inBin && isJavaExecutable(name)) {
-                            result.add(path.toAbsolutePath().toString())
+
+                        override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                            val name = file.fileName?.toString().orEmpty()
+                            val inBin = file.parent?.fileName?.toString()?.equals("bin", ignoreCase = true) == true
+                            if (inBin && isJavaExecutable(name)) {
+                                result.add(file.toAbsolutePath().toString())
+                            }
+                            return FileVisitResult.CONTINUE
                         }
-                    }
-                }
+                    },
+                )
             }
         }
         return result.distinct()
@@ -197,7 +211,7 @@ object JavaFinder {
      * 运行 `java -version` 探测一个 Java 安装的详细信息。
      */
     fun probeJavaVersion(javaPath: String): JavaInstallation? = runCatching {
-        val output = runCommand("$javaPath", "-version") ?: return null
+        val output = runCommand(javaPath, "-version") ?: return null
         val lines = output.trim().split('\n')
         val firstLine = lines.firstOrNull()?.trim() ?: return null
         var version = extractVersion(firstLine) ?: return null
@@ -222,6 +236,17 @@ object JavaFinder {
             val byVersion = compareVersions(b.version, a.version)
             if (byVersion != 0) byVersion else a.path.compareTo(b.path)
         }
+    }
+
+    /**
+     * 从版本字符串解析 Java 主版本号：1.8.0_392 -> 8，17.0.9 -> 17。
+     */
+    fun javaFeatureVersion(version: String): Int {
+        val cleaned = version.trim().substringBefore('+').substringBefore('-')
+        if (cleaned.startsWith("1.")) {
+            return cleaned.substringAfter('.').substringBefore('.').toIntOrNull() ?: 8
+        }
+        return cleaned.substringBefore('.').toIntOrNull() ?: 8
     }
 
     private fun compareVersions(a: String, b: String): Int {

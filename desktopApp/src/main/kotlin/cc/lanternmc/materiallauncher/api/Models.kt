@@ -20,7 +20,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * 前后端共享的数据模型（契约层）。
- * 前端只依赖 [api] 包，后端在 [core] 包中实现。
+ * 前端只依赖 `api` 包，后端在 `core` 包中实现。
  */
 
 @Serializable
@@ -44,6 +44,7 @@ data class DownloadPathConfig(
 data class DownloadConfig(
     val minecraft: DownloadPathConfig = DownloadPathConfig(),
     val java: DownloadPathConfig = DownloadPathConfig(source = "launcher"),
+    val username: String = "TestUser",
 )
 
 @Serializable
