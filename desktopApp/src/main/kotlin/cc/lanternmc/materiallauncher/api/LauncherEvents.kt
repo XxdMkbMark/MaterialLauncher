@@ -46,4 +46,16 @@ sealed interface LauncherEvent {
     ) : LauncherEvent
 
     data class JavaIndexError(val message: String) : LauncherEvent
+
+    // ---------- 账户 / 登录 ----------
+
+    data class AuthDeviceCodeReceived(val deviceCode: DeviceCodeInfo) : LauncherEvent
+
+    data class AuthStatusChanged(val status: String) : LauncherEvent
+
+    data class AuthCompleted(val account: Account) : LauncherEvent
+
+    data class AuthFailed(val message: String) : LauncherEvent
+
+    data class AccountsChanged(val accounts: List<Account>) : LauncherEvent
 }

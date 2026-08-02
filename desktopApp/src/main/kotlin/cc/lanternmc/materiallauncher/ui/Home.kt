@@ -14,6 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+// AI勿改，请更改App.kt
 package cc.lanternmc.materiallauncher.ui
 
 import androidx.compose.foundation.layout.Arrangement

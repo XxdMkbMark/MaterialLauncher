@@ -41,8 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.core.LauncherBackend
+import cc.lanternmc.materiallauncher.ui.pages.AccountDialog
 import cc.lanternmc.materiallauncher.ui.pages.DownloadPage
 import cc.lanternmc.materiallauncher.ui.pages.LaunchPage
 import cc.lanternmc.materiallauncher.ui.pages.LauncherSidebar
@@ -59,8 +61,19 @@ fun App(backend: LauncherBackend) {
         var launchSignal by remember { mutableIntStateOf(0) }
         var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
         var progressTick by remember { mutableIntStateOf(0) }
+        var selectedAccount by remember { mutableStateOf<Account?>(null) }
         val scope = rememberCoroutineScope()
         val snackbarHostState = remember { SnackbarHostState() }
+
+        // 加载保存的账户选择与账户列表
+        LaunchedEffect(Unit) {
+            val cfg = runCatching { backend.getDownloadConfig() }.getOrNull()
+            val accounts = runCatching { backend.getAccounts() }.getOrDefault(emptyList())
+            if (accounts.isNotEmpty()) {
+                selectedAccount = accounts.find { it.id == cfg?.accountId }
+                    ?: accounts.first()
+            }
+        }
 
         LaunchedEffect(backend) {
             backend.events.collect { event ->
@@ -95,6 +108,40 @@ fun App(backend: LauncherBackend) {
                             )
                         }
                     }
+                    is LauncherEvent.AuthStatusChanged -> {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = event.status,
+                                duration = SnackbarDuration.Short,
+                            )
+                        }
+                    }
+                    is LauncherEvent.AuthCompleted -> {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "登录成功: ${event.account.username}",
+                                duration = SnackbarDuration.Short,
+                            )
+                        }
+                    }
+                    is LauncherEvent.AuthFailed -> {
+                        scope.launch {
+                            snackbarHostState.showSnackbar(
+                                message = "登录失败: ${event.message}",
+                                duration = SnackbarDuration.Short,
+                            )
+                        }
+                    }
+                    is LauncherEvent.AccountsChanged -> {
+                        if (event.accounts.isNotEmpty()) {
+                            val keep = selectedAccount?.id
+                            selectedAccount = event.accounts.find { it.id == keep }
+                                ?: event.accounts.firstOrNull()
+                        } else {
+                            selectedAccount = null
+                        }
+                    }
+                    else -> Unit
                 }
             }
         }
@@ -115,6 +162,8 @@ fun App(backend: LauncherBackend) {
                         events = backend.events,
                         launchSignal = launchSignal,
                         dialog = dialog,
+                        selectedAccount = selectedAccount,
+                        onOpenAccountDialog = { dialog = SettingsDialog.ACCOUNT },
                         onOpenSettingsDialog = { dialog = it },
                     )
                     Page.DOWNLOAD -> DownloadPage(
@@ -123,6 +172,24 @@ fun App(backend: LauncherBackend) {
                         onBack = { page = Page.LAUNCH },
                     )
                 }
+            }
+
+            if (dialog == SettingsDialog.ACCOUNT) {
+                AccountDialog(
+                    api = backend,
+                    events = backend.events,
+                    selectedAccountId = selectedAccount?.id.orEmpty(),
+                    onSelectAccount = { id ->
+                        selectedAccount = null
+                        scope.launch {
+                            val accounts = backend.getAccounts()
+                            selectedAccount = accounts.find { it.id == id }
+                            val cfg = backend.getDownloadConfig()
+                            backend.saveDownloadConfig(cfg.copy(accountId = id))
+                        }
+                    },
+                    onDismiss = { dialog = null },
+                )
             }
 
             LauncherSidebar(
@@ -151,6 +218,7 @@ fun App(backend: LauncherBackend) {
                         label = "设置",
                         icon = Icons.Default.Settings,
                         items = listOf(
+                            SidebarItem("账户") { dialog = SettingsDialog.ACCOUNT },
                             SidebarItem("MC 路径") { dialog = SettingsDialog.MC_PATH },
                             SidebarItem("MC 版本") { dialog = SettingsDialog.MC_VERSION },
                             SidebarItem("用户名") { dialog = SettingsDialog.USERNAME },

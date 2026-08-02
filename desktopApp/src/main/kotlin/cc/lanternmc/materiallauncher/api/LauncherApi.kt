@@ -49,6 +49,13 @@ interface LauncherApi {
     suspend fun launchMinecraft(request: LaunchRequest): Int
     suspend fun resolveLaunchJava(gameDir: String, versionId: String, preferred: String): String
 
+    // ---- 账户 ----
+    suspend fun getAccounts(): List<Account>
+    suspend fun addOfflineAccount(username: String): Account
+    suspend fun removeAccount(accountId: String)
+    suspend fun refreshAccount(accountId: String): Account?
+    fun startMicrosoftLogin()
+
     // ---- 系统集成 ----
     suspend fun openDirectoryDialog(title: String): String?
 

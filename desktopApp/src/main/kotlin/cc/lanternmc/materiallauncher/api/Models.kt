@@ -45,6 +45,7 @@ data class DownloadConfig(
     val minecraft: DownloadPathConfig = DownloadPathConfig(),
     val java: DownloadPathConfig = DownloadPathConfig(source = "launcher"),
     val username: String = "TestUser",
+    val accountId: String = "",
 )
 
 @Serializable
@@ -75,6 +76,33 @@ data class DownloadProgress(
     val error: String? = null,
 )
 
+/**
+ * 启动器账户。type = "offline" | "online"。
+ */
+@Serializable
+data class Account(
+    val id: String = "",
+    val type: String = "offline",
+    val username: String = "",
+    val uuid: String = "",
+    val accessToken: String = "",
+    val userType: String = "legacy",
+    val msToken: String = "",
+    val refreshToken: String = "",
+    val msExpiresAt: Long = 0,
+    val lastRefreshed: String = "",
+)
+
+@Serializable
+data class DeviceCodeInfo(
+    val deviceCode: String = "",
+    val userCode: String = "",
+    val verificationUri: String = "",
+    val expiresIn: Long = 0,
+    val interval: Long = 5,
+    val message: String = "",
+)
+
 data class LaunchRequest(
     val javaPath: String,
     val gameDir: String,
@@ -82,4 +110,7 @@ data class LaunchRequest(
     val username: String,
     val maxMemory: String,
     val isolateVersion: Boolean,
+    val accessToken: String = "0",
+    val uuid: String = "00000000-0000-0000-0000-000000000000",
+    val userType: String = "legacy",
 )

@@ -57,6 +57,9 @@ class LaunchService(
         username: String,
         maxMem: String,
         isolateVersion: Boolean,
+        accessToken: String = "0",
+        uuid: String = "00000000-0000-0000-0000-000000000000",
+        userType: String = "legacy",
         emit: (LauncherEvent) -> Unit,
     ): Int = withContext(Dispatchers.IO) {
         val actualGameDir = if (isolateVersion) File(gameDir, "versions/$versionId").absolutePath else gameDir
@@ -96,6 +99,9 @@ class LaunchService(
             maxMem = maxMem,
             username = username,
             versionId = versionId,
+            accessToken = accessToken,
+            uuid = uuid,
+            userType = userType,
             emit = emit,
         )
         pid
@@ -110,6 +116,9 @@ class LaunchService(
         maxMem: String,
         username: String,
         versionId: String,
+        accessToken: String,
+        uuid: String,
+        userType: String,
         emit: (LauncherEvent) -> Unit,
     ): Int = withContext(Dispatchers.IO) {
         val nativesPath = File(gameDir, "versions/$versionId/natives").absolutePath
@@ -144,9 +153,9 @@ class LaunchService(
             "--gameDir", actualGameDir,
             "--assetsDir", File(gameDir, "assets").absolutePath,
             "--assetIndex", versionInfo.assetIndex.id,
-            "--accessToken", "0",
-            "--uuid", "00000000-0000-0000-0000-000000000000",
-            "--userType", "legacy",
+            "--accessToken", accessToken,
+            "--uuid", uuid,
+            "--userType", userType,
             "--versionType", "release",
         )
 

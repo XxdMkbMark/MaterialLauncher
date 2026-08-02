@@ -17,10 +17,13 @@
 package cc.lanternmc.materiallauncher.core
 
 import java.io.File
+import java.time.OffsetDateTime
+import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 import javax.swing.JFileChooser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -29,6 +32,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 import kotlinx.serialization.json.Json
+import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.DownloadProgress
 import cc.lanternmc.materiallauncher.api.JavaInstallation
@@ -38,7 +42,9 @@ import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.api.LauncherEventBus
 import cc.lanternmc.materiallauncher.api.LaunchRequest
 import cc.lanternmc.materiallauncher.api.MinecraftVersionEntry
+import cc.lanternmc.materiallauncher.core.auth.MicrosoftAuthService
 import cc.lanternmc.materiallauncher.core.config.AppDataPathsResolver
+import cc.lanternmc.materiallauncher.core.config.AuthStore
 import cc.lanternmc.materiallauncher.core.config.DownloadConfigStore
 import cc.lanternmc.materiallauncher.core.download.AssetDownloader
 import cc.lanternmc.materiallauncher.core.download.JavaVersionService
@@ -66,11 +72,13 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     private val paths = AppDataPathsResolver.resolve()
     private val configStore = DownloadConfigStore(paths)
+    private val authStore = AuthStore(File(paths.directory, "auth.toml").absolutePath)
     private val assetDownloader = AssetDownloader()
     private val libraryDownloader = LibraryDownloader()
     private val launchService = LaunchService(scope, assetDownloader, libraryDownloader)
     private val javaIndexer = JavaIndexer(paths.javaIndex, scope) { event -> _events.tryEmit(event) }
     private val downloadId = AtomicLong(0)
+    private var microsoftLoginJob: Job? = null
 
     private val _events = MutableSharedFlow<LauncherEvent>(extraBufferCapacity = 1024)
     override val events: SharedFlow<LauncherEvent> = _events.asSharedFlow()
@@ -262,6 +270,9 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             username = request.username,
             maxMem = request.maxMemory,
             isolateVersion = request.isolateVersion,
+            accessToken = request.accessToken,
+            uuid = request.uuid,
+            userType = request.userType,
             emit = { event -> _events.tryEmit(event) },
         )
 
@@ -308,6 +319,67 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             if (major >= required) major to j else null
         }.minByOrNull { it.first }?.second?.path
         return best ?: preferred
+    }
+
+    // ---------- 账户 ----------
+
+    override suspend fun getAccounts(): List<Account> = withContext(Dispatchers.IO) {
+        authStore.load()
+    }
+
+    override suspend fun addOfflineAccount(username: String): Account = withContext(Dispatchers.IO) {
+        val name = username.trim().ifBlank { "TestUser" }
+        val account = Account(
+            id = UUID.randomUUID().toString(),
+            type = "offline",
+            username = name,
+            uuid = "00000000-0000-0000-0000-000000000000",
+            userType = "legacy",
+            lastRefreshed = OffsetDateTime.now().toString(),
+        )
+        authStore.add(account)
+        _events.tryEmit(LauncherEvent.AccountsChanged(authStore.load()))
+        account
+    }
+
+    override suspend fun removeAccount(accountId: String) {
+        withContext(Dispatchers.IO) { authStore.remove(accountId) }
+        _events.tryEmit(LauncherEvent.AccountsChanged(authStore.load()))
+    }
+
+    override suspend fun refreshAccount(accountId: String): Account? = withContext(Dispatchers.IO) {
+        val accounts = authStore.load().toMutableList()
+        val idx = accounts.indexOfFirst { it.id == accountId }
+        if (idx < 0) return@withContext null
+        val refreshed = MicrosoftAuthService.refreshAccount(accounts[idx])
+        accounts[idx] = refreshed
+        authStore.save(accounts)
+        _events.tryEmit(LauncherEvent.AccountsChanged(authStore.load()))
+        refreshed
+    }
+
+    /**
+     * 启动微软设备码登录：设备码 → 轮询 → 换取 Minecraft 账户。
+     * 进度通过事件推送：`AuthDeviceCodeReceived` / `AuthStatusChanged` / `AuthCompleted` / `AuthFailed`。
+     */
+    override fun startMicrosoftLogin() {
+        if (microsoftLoginJob?.isActive == true) return
+        microsoftLoginJob = scope.launch {
+            try {
+                val deviceCode = MicrosoftAuthService.requestDeviceCode()
+                _events.tryEmit(LauncherEvent.AuthDeviceCodeReceived(deviceCode))
+                val token = MicrosoftAuthService.pollForToken(deviceCode) { status ->
+                    _events.tryEmit(LauncherEvent.AuthStatusChanged(status))
+                }
+                val account = MicrosoftAuthService.exchangeToAccount(token.accessToken, token.refreshToken)
+                withContext(Dispatchers.IO) { authStore.add(account) }
+                _events.tryEmit(LauncherEvent.AuthCompleted(account))
+                _events.tryEmit(LauncherEvent.AccountsChanged(authStore.load()))
+            } catch (e: Exception) {
+                Logger.error("Microsoft 登录失败: ${e.message}")
+                _events.tryEmit(LauncherEvent.AuthFailed(e.message ?: "unknown error"))
+            }
+        }
     }
 
     // ---------- 系统集成 ----------

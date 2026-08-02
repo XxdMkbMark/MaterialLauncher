@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
+import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.api.LaunchRequest
@@ -61,6 +62,8 @@ fun LaunchPage(
     events: Flow<LauncherEvent>,
     launchSignal: Int,
     dialog: SettingsDialog?,
+    selectedAccount: Account?,
+    onOpenAccountDialog: () -> Unit,
     onOpenSettingsDialog: (SettingsDialog?) -> Unit,
 ) {
     val scope = rememberCoroutineScope()
@@ -122,7 +125,12 @@ fun LaunchPage(
                             javaPath = javaPath,
                             gameDir = config?.minecraft?.path.orEmpty(),
                             versionId = selectedMcVersion,
-                            username = config?.username.orEmpty().ifBlank { "TestUser" },
+                            username = selectedAccount?.username
+                                ?: config?.username.orEmpty().ifBlank { "TestUser" },
+                            accessToken = selectedAccount?.accessToken ?: "0",
+                            uuid = selectedAccount?.uuid
+                                ?: "00000000-0000-0000-0000-000000000000",
+                            userType = selectedAccount?.userType ?: "legacy",
                             maxMemory = "${memValue}M",
                             isolateVersion = true,
                         ),
@@ -241,7 +249,14 @@ fun LaunchPage(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SettingCard("用户名", config?.username?.ifBlank { "TestUser" } ?: "TestUser", Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.USERNAME) }
+                SettingCard(
+                    label = "账户",
+                    value = selectedAccount?.let { acc ->
+                        "${acc.username} (${if (acc.type == "online") "正版" else "离线"})"
+                    } ?: config?.username?.ifBlank { "TestUser" } ?: "TestUser",
+                    modifier = Modifier.weight(1f),
+                    onClick = onOpenAccountDialog,
+                )
             }
         }
     }

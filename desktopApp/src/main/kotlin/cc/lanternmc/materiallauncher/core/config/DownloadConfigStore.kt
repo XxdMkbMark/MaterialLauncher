@@ -61,6 +61,7 @@ class DownloadConfigStore(private val paths: AppDataPaths) {
                 source = java.values["source"] ?: "launcher",
             ),
             username = account.values["username"] ?: defaults.username,
+            accountId = account.values["account_id"] ?: defaults.accountId,
         )
     }
 
@@ -78,6 +79,7 @@ class DownloadConfigStore(private val paths: AppDataPaths) {
             appendLine()
             appendLine("[account]")
             appendLine("username = ${Toml.quote(config.username)}")
+            appendLine("account_id = ${Toml.quote(config.accountId)}")
         }
         val tmp = File("${paths.config}.tmp")
         tmp.writeText(content)

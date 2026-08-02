@@ -51,7 +51,7 @@ import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.ui.components.DropdownField
 
-enum class SettingsDialog { MC_PATH, MC_VERSION, JAVA, MEM, USERNAME }
+enum class SettingsDialog { MC_PATH, MC_VERSION, JAVA, MEM, USERNAME, ACCOUNT }
 
 @Composable
 fun SettingsDialogs(
