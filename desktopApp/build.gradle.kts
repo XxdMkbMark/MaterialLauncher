@@ -31,6 +31,7 @@ dependencies {
     implementation(libs.kotlinx.serializationJson)
     implementation(libs.commons.compress)
     implementation(libs.compose.uiToolingPreview)
+    implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.2")
 }
 
 compose.desktop {

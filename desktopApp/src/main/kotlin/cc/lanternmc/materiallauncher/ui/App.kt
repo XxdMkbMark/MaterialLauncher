@@ -28,6 +28,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -48,13 +49,12 @@ import cc.lanternmc.materiallauncher.ui.pages.LauncherSidebar
 import cc.lanternmc.materiallauncher.ui.pages.SettingsDialog
 import cc.lanternmc.materiallauncher.ui.pages.SidebarCategory
 import cc.lanternmc.materiallauncher.ui.pages.SidebarItem
-import cc.lanternmc.materiallauncher.ui.theme.LightGreenScheme
 
 private enum class Page { LAUNCH, DOWNLOAD }
 
 @Composable
 fun App(backend: LauncherBackend) {
-    MaterialTheme(LightGreenScheme) {
+    MaterialTheme(lightColorScheme()) {
         var page by remember { mutableStateOf(Page.LAUNCH) }
         var launchSignal by remember { mutableIntStateOf(0) }
         var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
