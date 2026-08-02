@@ -68,7 +68,7 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     private val configStore = DownloadConfigStore(paths)
     private val assetDownloader = AssetDownloader()
     private val libraryDownloader = LibraryDownloader()
-    private val launchService = LaunchService(assetDownloader, libraryDownloader)
+    private val launchService = LaunchService(scope, assetDownloader, libraryDownloader)
     private val javaIndexer = JavaIndexer(paths.javaIndex, scope) { event -> _events.tryEmit(event) }
     private val downloadId = AtomicLong(0)
 
@@ -230,7 +230,7 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
             val javaBin = locateJavaBinary(destDir.absolutePath)
             if (javaBin != null) {
-                cc.lanternmc.materiallauncher.core.java.JavaFinder.probeJavaVersion(javaBin)
+                JavaFinder.probeJavaVersion(javaBin)
                     ?.let { Logger.info("Java 下载完成: ${it.path} (${it.version})") }
             }
             emitProgress("done", selected.downloadSize, selected.downloadSize)
@@ -241,11 +241,11 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     }
 
     private fun locateJavaBinary(extractDir: String): String? {
-        val direct = File(extractDir, "bin/${cc.lanternmc.materiallauncher.core.java.JavaFinder.javaExecutableName()}")
+        val direct = File(extractDir, "bin/${JavaFinder.javaExecutableName()}")
         if (direct.isFile) return direct.absolutePath
         File(extractDir).listFiles()?.forEach { child ->
             if (child.isDirectory) {
-                val candidate = File(child, "bin/${cc.lanternmc.materiallauncher.core.java.JavaFinder.javaExecutableName()}")
+                val candidate = File(child, "bin/${JavaFinder.javaExecutableName()}")
                 if (candidate.isFile) return candidate.absolutePath
             }
         }

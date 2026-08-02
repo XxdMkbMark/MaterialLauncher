@@ -19,7 +19,10 @@ package cc.lanternmc.materiallauncher.core.launch
 import java.io.File
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import cc.lanternmc.materiallauncher.api.LauncherEvent
@@ -30,6 +33,7 @@ import cc.lanternmc.materiallauncher.core.util.Logger
 import cc.lanternmc.materiallauncher.core.util.Os
 import cc.lanternmc.materiallauncher.core.util.compareMinecraftVersion
 import cc.lanternmc.materiallauncher.core.util.currentOs
+import kotlin.time.Duration.Companion.milliseconds
 
 class LauncherException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
@@ -37,6 +41,7 @@ class LauncherException(message: String, cause: Throwable? = null) : Exception(m
  * 游戏启动服务：净化 options.txt → 补齐 Assets → 补齐 Libraries → 拉起 Java 进程。
  */
 class LaunchService(
+    private val scope: CoroutineScope,
     private val assetDownloader: AssetDownloader,
     private val libraryDownloader: LibraryDownloader,
 ) {
@@ -166,7 +171,7 @@ class LaunchService(
             }
         }
 
-        Thread {
+        scope.launch(Dispatchers.IO) {
             process.inputStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
                 Logger.info("[MC] $line")
                 if (line.contains("Setting user:")
@@ -178,32 +183,30 @@ class LaunchService(
                 }
             }
             Logger.info("[MC] stdout 已关闭")
-        }.apply { isDaemon = true }.start()
+        }
 
-        Thread {
+        scope.launch(Dispatchers.IO) {
             process.errorStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
                 Logger.warn("[MC-ERR] $line")
             }
-        }.apply { isDaemon = true }.start()
+        }
 
         // 兜底：若 stdout 里没有可识别的就绪关键字，进程存活一段时间即视为已启动。
-        Thread {
-            try {
-                Thread.sleep(10_000)
-                if (process.isAlive) markReady()
-            } catch (_: InterruptedException) {
-            }
-        }.apply { isDaemon = true }.start()
+        scope.launch {
+            delay(10_000.milliseconds)
+            if (process.isAlive) markReady()
+        }
 
-        Thread {
-            val code = process.waitFor()
+        // 通过 Process.onExit() 非阻塞等待游戏进程退出，避免阻塞线程造成线程匮乏。
+        process.onExit().whenComplete { _, _ ->
+            val code = runCatching { process.exitValue() }.getOrDefault(-1)
             if (code != 0) {
                 Logger.error("Minecraft 游戏进程非正常退出, exit=$code")
             } else {
                 Logger.info("Minecraft 游戏进程已结束")
             }
             emit(LauncherEvent.GameExited(pid))
-        }.apply { isDaemon = true }.start()
+        }
 
         pid
     }
