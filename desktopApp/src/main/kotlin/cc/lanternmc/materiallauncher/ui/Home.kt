@@ -25,12 +25,19 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Checklist
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Home
+import androidx.compose.material.icons.rounded.Menu
+import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.VerifiedUser
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
@@ -47,6 +54,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.tooling.preview.Preview
@@ -56,6 +64,7 @@ import androidx.navigation.compose.rememberNavController
 import cc.lanternmc.materiallauncher.ui.pages.SampleDownloadPage
 import cc.lanternmc.materiallauncher.ui.pages.SampleSettings
 import cc.lanternmc.materiallauncher.ui.pages.SampleUsersManagement
+import cc.lanternmc.materiallauncher.ui.pages.SampleVersionsManagement
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 
 @Composable
@@ -70,8 +79,9 @@ fun SampleHome() {
 enum class Destination (val route: String, val label: String, val icon: ImageVector) {
     HOME("home", "主页", Icons.Rounded.Home),
     DOWNLOAD("download", "下载", Icons.Rounded.Download),
-    USERS("users","用户档案", Icons.Rounded.VerifiedUser),
-    SETTINGS("settings", "设置", Icons.Rounded.Settings)
+    VERSIONS("versions","版本", Icons.Rounded.Checklist),
+    SETTINGS("settings", "设置", Icons.Rounded.Settings),
+    USERS("users", "用户档案", Icons.Rounded.Person),
 }
 
 @Composable
@@ -82,14 +92,14 @@ fun AppNavHost (navController: NavHostController, startDestination: Destination,
                 when (destination) {
                     Destination.HOME -> SampleHome()
                     Destination.DOWNLOAD -> SampleDownloadPage()
-                    Destination.USERS -> SampleUsersManagement()
+                    Destination.VERSIONS -> SampleVersionsManagement()
                     Destination.SETTINGS -> SampleSettings()
+                    Destination.USERS -> SampleUsersManagement()
                 }
             }
         }
     }
 }
-
 
 @Preview
 @Composable
@@ -98,6 +108,10 @@ fun Home(modifier: Modifier = Modifier) {
     val startDestination = Destination.HOME
     var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
 
+    // ★ 如果你有抽屉，可以加上这个 ★
+    // val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    // val coroutineScope = rememberCoroutineScope()
+
     MaterialTheme(lightScheme) {
         Scaffold(modifier = modifier) { contentPadding ->
             Row(modifier = Modifier.padding(contentPadding)) {
@@ -105,25 +119,75 @@ fun Home(modifier: Modifier = Modifier) {
                 NavigationRail(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(72.dp)  // 典型宽度，可根据需求调整
+                        .width(72.dp),
+                    containerColor = MaterialTheme.colorScheme.surface,  // 可选：背景色
                 ) {
                     Column(
                         modifier = Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.Center
+                        verticalArrangement = Arrangement.SpaceBetween  // ★ 改为 SpaceBetween
                     ) {
-                        Destination.entries.forEachIndexed { index, destination ->
+                        // ========== 顶部区域：菜单 + FAB ==========
+                        Column(
+                            modifier = Modifier.padding(top = 8.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            // ★ 按钮1：菜单按钮（展开抽屉用）★
                             NavigationRailItem(
-                                selected = selectedDestination == index,
+                                selected = false,
                                 onClick = {
-                                    navController.navigate(route = destination.route)
-                                    selectedDestination = index
+                                    // coroutineScope.launch { drawerState.open() }
+                                    // 如果暂时没有抽屉，可以先留空或做其他操作
                                 },
                                 icon = {
-                                    Icon(destination.icon, contentDescription = "")
+                                    Icon(
+                                        imageVector = Icons.Rounded.Menu,
+                                        contentDescription = "菜单",
+                                    )
                                 },
-                                label = { Text(destination.label) }
                             )
+
+                            // ★ 按钮2：主要操作 FAB ★
+                            FloatingActionButton(
+                                onClick = {
+                                    navController.navigate(route = Destination.USERS.route)
+                                    selectedDestination = 5
+                                },
+                                modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
+                                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp, focusedElevation = 0.dp, hoveredElevation = 0.dp),
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Person,  // 或 Edit, Create 等
+                                    contentDescription = "新建",
+                                    modifier = Modifier.size(24.dp),
+                                )
+                            }
                         }
+
+                        // ========== 中间区域：导航项 ==========
+                        Column(
+                            modifier = Modifier.weight(1f).padding(20.dp),  // 占据剩余空间
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            Destination.entries.forEachIndexed { index, destination ->
+                                NavigationRailItem(
+                                    selected = selectedDestination == index,
+                                    onClick = {
+                                        navController.navigate(route = destination.route)
+                                        selectedDestination = index
+                                    },
+                                    icon = {
+                                        Icon(destination.icon, contentDescription = "")
+                                    },
+                                    label = { Text(destination.label) }
+                                )
+                            }
+                        }
+
+                        // ========== 底部区域（可选）==========
+                        // 如果需要在底部放其他按钮，可以在这里加
                     }
                 }
 
