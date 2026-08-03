@@ -30,6 +30,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.VerifiedUser
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationRail
@@ -52,39 +53,25 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import cc.lanternmc.materiallauncher.ui.pages.SampleDownloadPage
+import cc.lanternmc.materiallauncher.ui.pages.SampleSettings
+import cc.lanternmc.materiallauncher.ui.pages.SampleUsersManagement
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 
 @Composable
 fun SampleHome() {
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize()) {
-            Text("Home Screen")
-        }
-    }
-}
-
-@Composable
-fun SampleDownloadPage() {
-    MaterialTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Text("Download Screen")
-        }
-    }
-}
-
-@Composable
-fun SampleSettings() {
-    MaterialTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Text("Settings Screen")
+            Text("主页")
         }
     }
 }
 
 enum class Destination (val route: String, val label: String, val icon: ImageVector) {
-    HOME("home", "Home", Icons.Rounded.Home),
-    DOWNLOAD("download", "Download", Icons.Rounded.Download),
-    SETTINGS("settings", "Settings", Icons.Rounded.Settings)
+    HOME("home", "主页", Icons.Rounded.Home),
+    DOWNLOAD("download", "下载", Icons.Rounded.Download),
+    USERS("users","用户档案", Icons.Rounded.VerifiedUser),
+    SETTINGS("settings", "设置", Icons.Rounded.Settings)
 }
 
 @Composable
@@ -95,6 +82,7 @@ fun AppNavHost (navController: NavHostController, startDestination: Destination,
                 when (destination) {
                     Destination.HOME -> SampleHome()
                     Destination.DOWNLOAD -> SampleDownloadPage()
+                    Destination.USERS -> SampleUsersManagement()
                     Destination.SETTINGS -> SampleSettings()
                 }
             }
@@ -123,36 +111,19 @@ fun Home(modifier: Modifier = Modifier) {
                         modifier = Modifier.fillMaxHeight(),
                         verticalArrangement = Arrangement.Center
                     ) {
-                        // 主页
-                        NavigationRailItem(
-                            selected = selectedDestination == Destination.HOME.ordinal,
-                            onClick = {
-                                navController.navigate(Destination.HOME.route)
-                                selectedDestination = Destination.HOME.ordinal
-                            },
-                            icon = { Icon(Destination.HOME.icon, contentDescription = null) },
-                            label = { Text(Destination.HOME.label) }
-                        )
-                        // 下载
-                        NavigationRailItem(
-                            selected = selectedDestination == Destination.DOWNLOAD.ordinal,
-                            onClick = {
-                                navController.navigate(Destination.DOWNLOAD.route)
-                                selectedDestination = Destination.DOWNLOAD.ordinal
-                            },
-                            icon = { Icon(Destination.DOWNLOAD.icon, contentDescription = null) },
-                            label = { Text(Destination.DOWNLOAD.label) }
-                        )
-                        // 设置
-                        NavigationRailItem(
-                            selected = selectedDestination == Destination.SETTINGS.ordinal,
-                            onClick = {
-                                navController.navigate(Destination.SETTINGS.route)
-                                selectedDestination = Destination.SETTINGS.ordinal
-                            },
-                            icon = { Icon(Destination.SETTINGS.icon, contentDescription = null) },
-                            label = { Text(Destination.SETTINGS.label) }
-                        )
+                        Destination.entries.forEachIndexed { index, destination ->
+                            NavigationRailItem(
+                                selected = selectedDestination == index,
+                                onClick = {
+                                    navController.navigate(route = destination.route)
+                                    selectedDestination = index
+                                },
+                                icon = {
+                                    Icon(destination.icon, contentDescription = "")
+                                },
+                                label = { Text(destination.label) }
+                            )
+                        }
                     }
                 }
 
