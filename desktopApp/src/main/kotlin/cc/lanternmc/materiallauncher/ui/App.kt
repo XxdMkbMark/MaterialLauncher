@@ -207,6 +207,7 @@ fun App(backend: LauncherBackend) {
                         onMessage = ::showMessage,
                     )
                     Page.LOGS -> LogsPage(
+                        api = backend,
                         events = backend.events,
                         onBack = { page = Page.LAUNCH },
                     )

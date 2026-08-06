@@ -8,6 +8,7 @@ import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.LaunchRequest
 import cc.lanternmc.materiallauncher.core.launch.LauncherException
 import java.io.File
+import kotlinx.coroutines.CompletableDeferred
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -137,11 +138,15 @@ class LauncherBackendTest {
     fun `startDownload deduplicates same task key`() = runBlocking {
         backend.activeDownloads.clear()
         var started = 0
+        val firstStarted = CompletableDeferred<Unit>()
         // 第一次启动：任务持续挂起（delay 为协作式中断点），不让协程立刻结束
         backend.startDownload("minecraft:dedup") {
             started++
+            firstStarted.complete(Unit)
             delay(500)
         }
+        // 等待第一个任务真正开始执行，避免 IO 线程调度时序导致的 flaky
+        firstStarted.await()
         // 第二次（同 key）应被去重忽略
         backend.startDownload("minecraft:dedup") {
             started++

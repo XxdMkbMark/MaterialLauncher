@@ -129,6 +129,9 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
     override fun logWarn(message: String) = Logger.warn("[ui] $message")
     override fun logError(message: String) = Logger.error("[ui] $message")
 
+    override suspend fun getLogHistory(): List<LauncherEvent.LogLine> =
+        Logger.history().map { LauncherEvent.LogLine(it.level.name, it.message, it.time) }
+
     // ---------- 配置 ----------
 
     override suspend fun getDownloadConfig(): DownloadConfig = withContext(Dispatchers.IO) {

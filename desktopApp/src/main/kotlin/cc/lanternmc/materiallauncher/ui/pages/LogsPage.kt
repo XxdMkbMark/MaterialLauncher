@@ -39,30 +39,44 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.Flow
+import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.api.LauncherEvent
 
 private const val MAX_LOG_LINES = 2000
 
+/** 将日志事件格式化为展示行。 */
+private fun formatLine(event: LauncherEvent.LogLine): String {
+    val colorTag = when (event.level) {
+        "WARN" -> "[WARN]"
+        "ERROR" -> "[ERROR]"
+        else -> "[INFO]"
+    }
+    return "[${event.time}] $colorTag ${event.message}"
+}
+
 /**
  * 日志面板：实时显示后端日志（INFO/WARN/ERROR），自动滚动到底部。
+ *
+ * 首次打开时先回放 [api.getLogHistory]（补上订阅前丢失的历史日志），
+ * 随后订阅实时事件流。
  */
 @Composable
 fun LogsPage(
+    api: LauncherApi,
     events: Flow<LauncherEvent>,
     onBack: () -> Unit,
 ) {
     val lines = remember { mutableStateListOf<String>() }
     val listState = rememberLazyListState()
 
-    LaunchedEffect(events) {
+    LaunchedEffect(api, events) {
+        // 先回放历史，再订阅实时（避免重复：SharedFlow replay=0，订阅前事件不会重放）
+        runCatching { api.getLogHistory() }.getOrNull()?.forEach { event ->
+            lines.add(formatLine(event))
+        }
         events.collect { event ->
             if (event is LauncherEvent.LogLine) {
-                val colorTag = when (event.level) {
-                    "WARN" -> "[WARN]"
-                    "ERROR" -> "[ERROR]"
-                    else -> "[INFO]"
-                }
-                lines.add("[${event.time}] $colorTag ${event.message}")
+                lines.add(formatLine(event))
                 // 防止无限增长
                 if (lines.size > MAX_LOG_LINES) {
                     lines.removeRange(0, lines.size - MAX_LOG_LINES)

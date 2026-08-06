@@ -119,6 +119,9 @@ interface LauncherApi {
     fun logInfo(message: String)
     fun logWarn(message: String)
     fun logError(message: String)
+
+    /** 返回最近 500 条日志（UI 面板首次打开时回放，补上订阅前丢失的事件）。 */
+    suspend fun getLogHistory(): List<LauncherEvent.LogLine>
 }
 
 /**
