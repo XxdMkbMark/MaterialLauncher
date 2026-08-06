@@ -168,7 +168,11 @@ object HttpUtil {
             var existing = if (Files.exists(part)) Files.size(part) else 0L
             // 已完成的部分恰为完整文件（上次移动失败）时直接复用；空文件不算完成
             val finalPath = Path.of(dest)
-            if (existing == 0L && Files.exists(finalPath) && Files.size(finalPath) > 0) return@withContext
+            if (existing == 0L && Files.exists(finalPath) && Files.size(finalPath) > 0) {
+                // 清理可能残留的 .part（目标已完整，无需续传）
+                if (Files.exists(part)) Files.deleteIfExists(part)
+                return@withContext
+            }
 
             val builder = HttpRequest.newBuilder(URI.create(url))
                 .timeout(Duration.ofSeconds(120))

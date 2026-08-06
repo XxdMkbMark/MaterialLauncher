@@ -65,4 +65,30 @@ class MirrorUrlRewriterTest {
         assertEquals(listOf(url), MirrorUrlRewriter.candidates(url, DownloadMirrorSource.MIRROR))
         assertTrue(MirrorUrlRewriter.toMirrorUrl(url) == null)
     }
+
+    @Test
+    fun `adoptium github archive maps to tsinghua mirror`() {
+        val official = "https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.zip"
+        val mirror = MirrorUrlRewriter.toAdoptiumMirrorUrl(official)
+        assertEquals(
+            "https://mirrors.tuna.tsinghua.edu.cn/Adoptium/17/jdk/x64/windows/hotspot/OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.zip",
+            mirror,
+        )
+    }
+
+    @Test
+    fun `adoptium candidates follow source policy`() {
+        val official = "https://github.com/adoptium/temurin21-binaries/releases/download/jdk-21.0.1/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.1_12.tar.gz"
+        val mirror = "https://mirrors.tuna.tsinghua.edu.cn/Adoptium/21/jdk/aarch64/linux/hotspot/OpenJDK21U-jdk_aarch64_linux_hotspot_21.0.1_12.tar.gz"
+
+        assertEquals(listOf(official), MirrorUrlRewriter.adoptiumCandidates(official, DownloadMirrorSource.OFFICIAL))
+        assertEquals(listOf(mirror), MirrorUrlRewriter.adoptiumCandidates(official, DownloadMirrorSource.MIRROR))
+        assertEquals(listOf(mirror, official), MirrorUrlRewriter.adoptiumCandidates(official, DownloadMirrorSource.AUTO))
+    }
+
+    @Test
+    fun `adoptium mirror returns null for non-matching urls`() {
+        assertTrue(MirrorUrlRewriter.toAdoptiumMirrorUrl("https://api.adoptium.net/v3/binary/xxx") == null)
+        assertTrue(MirrorUrlRewriter.toAdoptiumMirrorUrl("https://github.com/other/repo/releases/download/v1/x.zip") == null)
+    }
 }

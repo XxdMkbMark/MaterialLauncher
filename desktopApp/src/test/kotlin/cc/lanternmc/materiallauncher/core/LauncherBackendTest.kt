@@ -171,4 +171,31 @@ class LauncherBackendTest {
             dir.deleteRecursively()
         }
     }
+
+    // ---- 多实例：异常路径 ----
+
+    @Test
+    fun `launchInstance with unknown id throws`() {
+        runBlocking {
+            assertFailsWith<LauncherException> {
+                backend.launchInstance(
+                    instanceId = "no-such-instance",
+                    username = "Bret",
+                    accessToken = "0",
+                    uuid = "00000000-0000-0000-0000-000000000000",
+                    userType = "legacy",
+                )
+            }
+        }
+    }
+
+    // ---- 离线账户：配置同步 ----
+
+    @Test
+    fun `addOfflineAccount syncs config username and accountId`() = runBlocking {
+        val account = backend.addOfflineAccount("BretNew")
+        val cfg = backend.configStore.load()
+        assertEquals(account.id, cfg.accountId)
+        assertEquals("BretNew", cfg.username)
+    }
 }

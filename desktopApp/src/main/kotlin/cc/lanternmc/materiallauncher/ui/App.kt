@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.ViewList
+import androidx.compose.material.icons.filled.Article
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -56,11 +57,12 @@ import cc.lanternmc.materiallauncher.ui.pages.DownloadPage
 import cc.lanternmc.materiallauncher.ui.pages.InstancesPage
 import cc.lanternmc.materiallauncher.ui.pages.LaunchPage
 import cc.lanternmc.materiallauncher.ui.pages.LauncherSidebar
+import cc.lanternmc.materiallauncher.ui.pages.LogsPage
 import cc.lanternmc.materiallauncher.ui.pages.SettingsDialog
 import cc.lanternmc.materiallauncher.ui.pages.SidebarCategory
 import cc.lanternmc.materiallauncher.ui.pages.SidebarItem
 
-private enum class Page { LAUNCH, DOWNLOAD, INSTANCES }
+private enum class Page { LAUNCH, DOWNLOAD, INSTANCES, LOGS }
 
 @Composable
 fun App(backend: LauncherBackend) {
@@ -209,6 +211,10 @@ fun App(backend: LauncherBackend) {
                         },
                         onMessage = ::showMessage,
                     )
+                    Page.LOGS -> LogsPage(
+                        events = backend.events,
+                        onBack = { page = Page.LAUNCH },
+                    )
                 }
             }
 
@@ -272,6 +278,13 @@ fun App(backend: LauncherBackend) {
                         icon = Icons.Default.ViewList,
                         items = listOf(
                             SidebarItem("多实例管理") { page = Page.INSTANCES },
+                        ),
+                    ),
+                    SidebarCategory(
+                        label = "日志",
+                        icon = Icons.Default.Article,
+                        items = listOf(
+                            SidebarItem("日志面板") { page = Page.LOGS },
                         ),
                     ),
                     SidebarCategory(

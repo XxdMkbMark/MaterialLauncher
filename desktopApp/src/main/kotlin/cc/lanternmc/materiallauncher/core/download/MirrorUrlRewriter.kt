@@ -86,4 +86,61 @@ object MirrorUrlRewriter {
             DownloadMirrorSource.AUTO -> if (mirror != null) listOf(mirror, url) else listOf(url)
         }
     }
+
+    /**
+     * Adoptium JDK 归档的镜像候选。
+     *
+     * 官方归档在 github.com/adoptium/.../releases/download/<tag>/<file>，
+     * 国内镜像（清华/华为）提供同构路径。由于归档文件名与镜像结构不完全一致，
+     * 这里按文件名与 tag 直接拼镜像路径，失败时回退官方。
+     */
+    fun adoptiumCandidates(
+        officialUrl: String,
+        source: DownloadMirrorSource,
+    ): List<String> {
+        val mirror = toAdoptiumMirrorUrl(officialUrl)
+        return when (source) {
+            DownloadMirrorSource.OFFICIAL -> listOf(officialUrl)
+            DownloadMirrorSource.MIRROR -> listOfNotNull(mirror ?: officialUrl)
+            DownloadMirrorSource.AUTO -> if (mirror != null) listOf(mirror, officialUrl) else listOf(officialUrl)
+        }
+    }
+
+    /**
+     * 把 Adoptium GitHub 归档 URL 转换为国内镜像 URL。
+     *
+     * 例：https://github.com/adoptium/temurin17-binaries/releases/download/jdk-17.0.9%2B9/OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.zip
+     *  → https://mirrors.tuna.tsinghua.edu.cn/Adoptium/17/jdk/x64/windows/hotspot/OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.zip
+     */
+    fun toAdoptiumMirrorUrl(url: String): String? {
+        // 形如 https://github.com/adoptium/<repo>/releases/download/<tag>/<fileName>
+        val match = Regex(
+            "^https://github\\.com/adoptium/(?:temurin|jdk)(\\d+)[^/]*/releases/download/[^/]+/([^/?#]+)$",
+        ).find(url) ?: return null
+        val major = match.groupValues[1]
+        val fileName = match.groupValues[2]
+
+        // 从文件名解析镜像子路径：OpenJDK17U-jdk_x64_windows_hotspot_17.0.9_9.zip
+        // 格式: OpenJDK<major>U-<type>_<arch>_<os>_<jvm>_<version>.<ext>
+        val fileMatch = Regex(
+            "^OpenJDK\\d+U-(jdk|jre)_([^_]+)_(windows|mac|linux)_([^_]+)_(.+)$",
+        ).find(fileName) ?: return null
+        val imageType = fileMatch.groupValues[1]
+        val arch = fileMatch.groupValues[2]
+        val os = fileMatch.groupValues[3]
+
+        // 清华镜像路径结构：<major>/<imageType>/<arch>/<os>/<jvm>/<fileName>
+        val osPath = when (os) {
+            "windows" -> "windows"
+            "mac" -> "mac"
+            else -> "linux"
+        }
+        val archPath = when (arch) {
+            "x64" -> "x64"
+            "aarch64" -> "aarch64"
+            "x86" -> "x86"
+            else -> arch
+        }
+        return "https://mirrors.tuna.tsinghua.edu.cn/Adoptium/$major/$imageType/$archPath/$osPath/hotspot/$fileName"
+    }
 }

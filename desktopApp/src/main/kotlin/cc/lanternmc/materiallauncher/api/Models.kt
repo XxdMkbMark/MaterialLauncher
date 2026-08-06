@@ -81,6 +81,8 @@ data class DownloadProgress(
     val downloaded: Long = 0,
     val total: Long = 0,
     val error: String? = null,
+    /** 瞬时下载速度（字节/秒），仅 downloading 状态有意义。 */
+    val speedBytesPerSec: Long = 0,
 )
 
 /**

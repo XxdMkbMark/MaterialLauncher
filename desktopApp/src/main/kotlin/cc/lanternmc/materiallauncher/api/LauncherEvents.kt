@@ -60,4 +60,11 @@ sealed interface LauncherEvent {
     data class AuthFailed(val message: String) : LauncherEvent
 
     data class AccountsChanged(val accounts: List<Account>) : LauncherEvent
+
+    /** 后端日志行（INFO 及以上），用于 UI 日志面板。 */
+    data class LogLine(
+        val level: String,
+        val message: String,
+        val time: String,
+    ) : LauncherEvent
 }

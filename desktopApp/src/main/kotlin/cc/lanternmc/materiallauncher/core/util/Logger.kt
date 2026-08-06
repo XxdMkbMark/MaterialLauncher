@@ -21,9 +21,13 @@ import java.io.FileOutputStream
 import java.io.PrintStream
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.CopyOnWriteArrayList
 
 /**
  * 简单的彩色无依赖日志。
+ *
+ * 支持注册 [LogListener]，每条日志（INFO 及以上）都会推送给监听器，
+ * 用于把日志转发到 UI 面板。
  */
 object Logger {
     enum class Level { DEBUG, INFO, WARN, ERROR }
@@ -31,12 +35,25 @@ object Logger {
     @Volatile
     var level: Level = Level.INFO
 
+    /** 日志条目（含时间戳），供 UI 展示。 */
+    data class Entry(val level: Level, val message: String, val time: String)
+
     private val fmt = DateTimeFormatter.ofPattern("HH:mm:ss.SSS")
+    private val listeners = CopyOnWriteArrayList<(Entry) -> Unit>()
 
     init {
         // Windows 下 JVM 默认按平台编码(GBK)输出，中文在 UTF-8 控制台/IDE 里会乱码，这里强制 UTF-8。
         System.setOut(PrintStream(FileOutputStream(FileDescriptor.out), true, Charsets.UTF_8))
         System.setErr(PrintStream(FileOutputStream(FileDescriptor.err), true, Charsets.UTF_8))
+    }
+
+    /** 注册日志监听器（UI 面板用）。 */
+    fun addListener(listener: (Entry) -> Unit) {
+        listeners.add(listener)
+    }
+
+    fun removeListener(listener: (Entry) -> Unit) {
+        listeners.remove(listener)
     }
 
     fun debug(message: String) = log(Level.DEBUG, message)
@@ -46,7 +63,14 @@ object Logger {
 
     private fun log(level: Level, message: String) {
         if (level.ordinal < this.level.ordinal) return
-        val line = "[${LocalDateTime.now().format(fmt)}] [${level.name}] $message"
+        val time = LocalDateTime.now().format(fmt)
+        val line = "[$time] [${level.name}] $message"
         if (level >= Level.WARN) System.err.println(line) else println(line)
+        if (level >= Level.INFO) {
+            val entry = Entry(level, message, time)
+            for (listener in listeners) {
+                runCatching { listener(entry) }
+            }
+        }
     }
 }

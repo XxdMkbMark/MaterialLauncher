@@ -66,6 +66,7 @@ import cc.lanternmc.materiallauncher.core.model.VersionJson
 import cc.lanternmc.materiallauncher.core.util.ArchiveExtractor
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
 import cc.lanternmc.materiallauncher.core.util.Logger
+import cc.lanternmc.materiallauncher.core.util.RateMeter
 import cc.lanternmc.materiallauncher.core.util.Sha1
 import cc.lanternmc.materiallauncher.core.util.Sha256
 import cc.lanternmc.materiallauncher.core.util.compareMinecraftVersion
@@ -96,6 +97,19 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     private val _events = MutableSharedFlow<LauncherEvent>(extraBufferCapacity = 1024)
     override val events: SharedFlow<LauncherEvent> = _events.asSharedFlow()
+
+    init {
+        // 后端日志推送到事件总线，供 UI 日志面板展示。
+        Logger.addListener { entry ->
+            _events.tryEmit(
+                LauncherEvent.LogLine(
+                    level = entry.level.name,
+                    message = entry.message,
+                    time = entry.time,
+                ),
+            )
+        }
+    }
 
     // ---------- 日志 ----------
 
@@ -219,12 +233,19 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     private suspend fun downloadMinecraft(versionId: String) {
         val id = nextDownloadId()
-        fun emitProgress(status: String, downloaded: Long = 0, total: Long = 0, error: String? = null) {
+        fun emitProgress(
+            status: String,
+            downloaded: Long = 0,
+            total: Long = 0,
+            error: String? = null,
+            speedBytesPerSec: Long = 0,
+        ) {
             _events.tryEmit(
                 LauncherEvent.DownloadProgressEvent(
                     DownloadProgress(
                         id = id, type = "minecraft", item = versionId,
                         status = status, downloaded = downloaded, total = total, error = error,
+                        speedBytesPerSec = speedBytesPerSec,
                     ),
                 ),
             )
@@ -241,6 +262,7 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
             val versionDir = File(mcPath, "versions/$versionId")
             versionDir.mkdirs()
+            val rateMeter = RateMeter()
 
             emitProgress("downloading", 0, 0)
             // 版本 JSON 也按镜像策略回退
@@ -256,7 +278,12 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             emitProgress("downloading", 0, client.size)
             // client jar 按镜像策略回退 + 校验失败自动重下
             downloadClientWithRetry(client, clientJar.absolutePath, source) { downloaded, total ->
-                emitProgress("downloading", downloaded, if (total > 0) total else client.size)
+                emitProgress(
+                    "downloading",
+                    downloaded,
+                    if (total > 0) total else client.size,
+                    speedBytesPerSec = rateMeter.record(downloaded),
+                )
             }
             if (!Sha1.isFileValid(clientJar.absolutePath, client.sha1, client.size)) {
                 clientJar.delete()
@@ -310,19 +337,28 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     private suspend fun downloadJava(javaVersionId: String) {
         val id = nextDownloadId()
-        fun emitProgress(status: String, downloaded: Long = 0, total: Long = 0, error: String? = null) {
+        fun emitProgress(
+            status: String,
+            downloaded: Long = 0,
+            total: Long = 0,
+            error: String? = null,
+            speedBytesPerSec: Long = 0,
+        ) {
             _events.tryEmit(
                 LauncherEvent.DownloadProgressEvent(
                     DownloadProgress(
                         id = id, type = "java", item = javaVersionId,
                         status = status, downloaded = downloaded, total = total, error = error,
+                        speedBytesPerSec = speedBytesPerSec,
                     ),
                 ),
             )
         }
 
         emitProgress("fetching")
-        val javaDir = configStore.load().java.path
+        val config = configStore.load()
+        val javaDir = config.java.path
+        val source = DownloadMirrorSource.fromConfig(config.mirrorSource)
         try {
             val selected = JavaVersionService.fetchVersions().firstOrNull { it.id == javaVersionId }
                 ?: throw LauncherException("未找到 Java 版本 $javaVersionId")
@@ -333,8 +369,15 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             File(javaDir).mkdirs()
 
             emitProgress("downloading", 0, selected.downloadSize)
-            HttpUtil.downloadFile(selected.downloadUrl, archivePath.absolutePath) { downloaded, total ->
-                emitProgress("downloading", downloaded, if (total > 0) total else selected.downloadSize)
+            val rateMeter = RateMeter()
+            downloadJavaArchive(selected, archivePath.absolutePath, source) { downloaded, total ->
+                val speed = rateMeter.record(downloaded)
+                emitProgress(
+                    "downloading",
+                    downloaded,
+                    if (total > 0) total else selected.downloadSize,
+                    speedBytesPerSec = speed,
+                )
             }
             // 完整性校验：先比大小，再比 SHA-256（Adoptium 提供 checksum）。
             if (archivePath.length() != selected.downloadSize) {
@@ -360,6 +403,30 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             Logger.error("Java 下载失败: ${e.message}")
             emitProgress("error", error = e.message ?: "unknown error")
         }
+    }
+
+    /** 下载 Java 归档：镜像回退 + 校验失败自动重下（最多 3 次）。 */
+    private suspend fun downloadJavaArchive(
+        selected: JavaReleaseInfo,
+        dest: String,
+        source: DownloadMirrorSource,
+        onProgress: (Long, Long) -> Unit,
+    ) {
+        var lastError: Exception? = null
+        for (attempt in 1..CLIENT_DOWNLOAD_ATTEMPTS) {
+            for (candidate in MirrorUrlRewriter.adoptiumCandidates(selected.downloadUrl, source)) {
+                try {
+                    File(dest).delete()
+                    HttpUtil.downloadFile(candidate, dest, onProgress)
+                    if (Sha256.isFileValid(dest, selected.sha256)) return
+                    File(dest).delete()
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+            Logger.warn("Java 归档下载失败（第 $attempt 次，将重试）: ${selected.downloadUrl}")
+        }
+        throw lastError ?: IllegalStateException("Java 归档下载失败: ${selected.downloadUrl}")
     }
 
     private fun locateJavaBinary(extractDir: String): String? {
@@ -618,6 +685,9 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             lastRefreshed = OffsetDateTime.now().toString(),
         )
         authStore.add(account)
+        // 同步默认启动账户与昵称，避免配置里的旧值不一致
+        val cfg = configStore.load()
+        configStore.save(cfg.copy(accountId = account.id, username = name))
         _events.tryEmit(LauncherEvent.AccountsChanged(authStore.load()))
         account
     }

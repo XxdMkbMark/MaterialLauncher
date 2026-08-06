@@ -190,6 +190,20 @@ class LaunchService(
         logsDir.mkdirs()
         val gameLogFile = File(logsDir, "launcher-$pid.log")
         val logWriter = gameLogFile.bufferedWriter(Charsets.UTF_8)
+        // stdout/stderr 两个协程会并发写同一个 writer，加锁防止交错
+        val logLock = Any()
+        fun writeLog(line: String) {
+            synchronized(logLock) {
+                runCatching {
+                    logWriter.write(line)
+                    logWriter.newLine()
+                    logWriter.flush()
+                }
+            }
+        }
+        fun closeLog() {
+            synchronized(logLock) { runCatching { logWriter.close() } }
+        }
 
         val ready = AtomicBoolean(false)
         fun markReady() {
@@ -202,7 +216,7 @@ class LaunchService(
             runCatching {
                 process.inputStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
                     Logger.info("[MC] $line")
-                    runCatching { logWriter.write(line); logWriter.newLine(); logWriter.flush() }
+                    writeLog(line)
                     if (line.contains("Setting user:")
                         || line.contains("Launched game")
                         || line.contains("Backend library:")
@@ -212,7 +226,7 @@ class LaunchService(
                     }
                 }
             }
-            runCatching { logWriter.close() }
+            closeLog()
             Logger.info("[MC] stdout 已关闭")
         }
 
@@ -220,10 +234,10 @@ class LaunchService(
             runCatching {
                 process.errorStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
                     Logger.warn("[MC-ERR] $line")
-                    runCatching { logWriter.write("[ERR] $line"); logWriter.newLine(); logWriter.flush() }
+                    writeLog("[ERR] $line")
                 }
             }
-            runCatching { logWriter.close() }
+            closeLog()
         }
 
         // 兜底：若 stdout 里没有可识别的就绪关键字，进程存活一段时间即视为已启动。
@@ -241,7 +255,7 @@ class LaunchService(
             } else {
                 Logger.info("Minecraft 游戏进程已结束")
             }
-            runCatching { logWriter.close() }
+            runCatching { closeLog() }
             emit(LauncherEvent.GameExited(pid, exitCode = code))
         }
 

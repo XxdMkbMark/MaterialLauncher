@@ -244,7 +244,20 @@ private fun DownloadRow(
                     text = when (prog?.status) {
                         "fetching" -> "获取中..."
                         "extracting" -> "解压中..."
-                        else -> "${formatSize(prog?.downloaded ?: 0)} / ${formatSize(prog?.total ?: 0)}"
+                        else -> {
+                            val d = prog?.downloaded ?: 0
+                            val t = prog?.total ?: 0
+                            val base = "${formatSize(d)} / ${formatSize(t)}"
+                            val speed = prog?.speedBytesPerSec ?: 0
+                            if (speed > 0) {
+                                val remain = (t - d).coerceAtLeast(0)
+                                val etaSec = if (speed > 0) remain / speed else -1L
+                                val etaText = if (etaSec >= 0) "  ·  ${formatEta(etaSec)}" else ""
+                                "$base  ·  ${formatSize(speed)}/s$etaText"
+                            } else {
+                                base
+                            }
+                        }
                     },
                     style = MaterialTheme.typography.labelSmall,
                 )
@@ -269,4 +282,16 @@ fun formatSize(bytes: Long): String {
         i++
     }
     return String.format("%.1f %s", value, units[i])
+}
+
+/** 把剩余秒数格式化为 ETA 文本（如 剩余 1 分 30 秒）。 */
+fun formatEta(seconds: Long): String {
+    if (seconds < 0) return "剩余 --"
+    if (seconds < 60) return "剩余 ${seconds} 秒"
+    val min = seconds / 60
+    val sec = seconds % 60
+    if (min < 60) return "剩余 ${min} 分 ${sec} 秒"
+    val hour = min / 60
+    val minRemain = min % 60
+    return "剩余 ${hour} 时 ${minRemain} 分"
 }
