@@ -26,7 +26,9 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Duration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.coroutineContext
 
 class HttpResult(val statusCode: Int, val body: String)
 
@@ -164,6 +166,7 @@ object HttpUtil {
                 Files.newOutputStream(tmp).use { output ->
                     val buffer = ByteArray(64 * 1024)
                     while (true) {
+                        coroutineContext.ensureActive()
                         val read = input.read(buffer)
                         if (read < 0) break
                         output.write(buffer, 0, read)

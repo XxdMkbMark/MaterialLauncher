@@ -63,6 +63,7 @@ data class JavaReleaseInfo(
     val featureVersion: Int,
     val downloadUrl: String,
     val downloadSize: Long,
+    val sha256: String = "",
 )
 
 @Serializable
@@ -113,4 +114,6 @@ data class LaunchRequest(
     val accessToken: String = "0",
     val uuid: String = "00000000-0000-0000-0000-000000000000",
     val userType: String = "legacy",
+    /** 可选：正版账户的 id。提供时后端会按此精确定位账户并自动续期 token。 */
+    val accountId: String = "",
 )

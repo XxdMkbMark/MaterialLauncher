@@ -55,9 +55,17 @@ object JavaVersionService {
                     featureVersion = featureVer,
                     downloadUrl = binary.archive.link,
                     downloadSize = binary.archive.size,
+                    sha256 = extractSha256(binary.archive.checksum),
                 ),
             )
         }
         return result
+    }
+
+    /** Adoptium checksum 形如 "sha256:3f2...  " 或纯 hex，剥掉前缀与空白。 */
+    fun extractSha256(checksum: String): String {
+        val cleaned = checksum.trim().substringAfterLast(':').trim()
+        if (cleaned.matches(Regex("^[0-9a-fA-F]{64}$"))) return cleaned.lowercase()
+        return ""
     }
 }

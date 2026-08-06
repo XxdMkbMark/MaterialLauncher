@@ -157,4 +157,5 @@ data class JavaPackage(
     val link: String = "",
     val size: Long = 0,
     val name: String = "",
+    val checksum: String = "",
 )

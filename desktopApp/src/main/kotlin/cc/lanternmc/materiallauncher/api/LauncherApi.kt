@@ -45,6 +45,9 @@ interface LauncherApi {
     fun startMinecraftDownload(versionId: String)
     fun startJavaDownload(javaVersionId: String)
 
+    /** 取消进行中的下载任务，taskKey 形如 "minecraft:<id>" / "java:<id>"。 */
+    fun cancelDownload(taskKey: String)
+
     // ---- 游戏启动 ----
     suspend fun launchMinecraft(request: LaunchRequest): Int
     suspend fun resolveLaunchJava(gameDir: String, versionId: String, preferred: String): String

@@ -19,6 +19,7 @@ package cc.lanternmc.materiallauncher.core
 import java.io.File
 import java.time.OffsetDateTime
 import java.util.UUID
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import javax.swing.JFileChooser
 import kotlinx.coroutines.CoroutineScope
@@ -59,6 +60,7 @@ import cc.lanternmc.materiallauncher.core.util.ArchiveExtractor
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
 import cc.lanternmc.materiallauncher.core.util.Logger
 import cc.lanternmc.materiallauncher.core.util.Sha1
+import cc.lanternmc.materiallauncher.core.util.Sha256
 import cc.lanternmc.materiallauncher.core.util.compareMinecraftVersion
 
 /**
@@ -71,14 +73,17 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     private val json = Json { ignoreUnknownKeys = true }
 
     private val paths = AppDataPathsResolver.resolve()
-    private val configStore = DownloadConfigStore(paths)
-    private val authStore = AuthStore(File(paths.directory, "auth.toml").absolutePath)
+    internal val configStore = DownloadConfigStore(paths)
+    internal val authStore = AuthStore(File(paths.directory, "auth.toml").absolutePath)
     private val assetDownloader = AssetDownloader()
     private val libraryDownloader = LibraryDownloader()
     private val launchService = LaunchService(scope, assetDownloader, libraryDownloader)
     private val javaIndexer = JavaIndexer(paths.javaIndex, scope) { event -> _events.tryEmit(event) }
     private val downloadId = AtomicLong(0)
     private var microsoftLoginJob: Job? = null
+
+    /** 正在进行的下载任务，key 形如 "minecraft:<id>" / "java:<id>"，用于去重与取消。 */
+    internal val activeDownloads = ConcurrentHashMap<String, Job>()
 
     private val _events = MutableSharedFlow<LauncherEvent>(extraBufferCapacity = 1024)
     override val events: SharedFlow<LauncherEvent> = _events.asSharedFlow()
@@ -142,11 +147,31 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     // ---------- 下载 ----------
 
     override fun startMinecraftDownload(versionId: String) {
-        scope.launch { downloadMinecraft(versionId) }
+        startDownload("minecraft:$versionId") { downloadMinecraft(versionId) }
     }
 
     override fun startJavaDownload(javaVersionId: String) {
-        scope.launch { downloadJava(javaVersionId) }
+        startDownload("java:$javaVersionId") { downloadJava(javaVersionId) }
+    }
+
+    override fun cancelDownload(taskKey: String) {
+        activeDownloads.remove(taskKey)?.let { it.cancel() }
+    }
+
+    /**
+     * 以 taskKey 去重：同一目标的任务已在执行时直接忽略，避免重复启动多个下载协程。
+     * 任务结束后（含取消 / 异常）自动从表中移除。
+     */
+    internal fun startDownload(taskKey: String, block: suspend () -> Unit) {
+        if (activeDownloads.containsKey(taskKey)) return
+        val job = scope.launch {
+            try {
+                block()
+            } finally {
+                activeDownloads.remove(taskKey)
+            }
+        }
+        activeDownloads[taskKey] = job
     }
 
     private fun nextDownloadId(): String = "dl-${downloadId.incrementAndGet()}"
@@ -227,9 +252,14 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             HttpUtil.downloadFile(selected.downloadUrl, archivePath.absolutePath) { downloaded, total ->
                 emitProgress("downloading", downloaded, if (total > 0) total else selected.downloadSize)
             }
+            // 完整性校验：先比大小，再比 SHA-256（Adoptium 提供 checksum）。
             if (archivePath.length() != selected.downloadSize) {
                 archivePath.delete()
                 throw LauncherException("Java 归档大小校验失败: ${archivePath.length()} != ${selected.downloadSize}")
+            }
+            if (selected.sha256.isNotBlank() && !Sha256.isFileValid(archivePath.absolutePath, selected.sha256)) {
+                archivePath.delete()
+                throw LauncherException("Java 归档 SHA-256 校验失败")
             }
             emitProgress("extracting", selected.downloadSize, selected.downloadSize)
 
@@ -262,7 +292,8 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     // ---------- 游戏启动 ----------
 
-    override suspend fun launchMinecraft(request: LaunchRequest): Int =
+    override suspend fun launchMinecraft(request: LaunchRequest): Int = withContext(Dispatchers.IO) {
+        val (token, uuid) = ensureValidLaunchAccount(request)
         launchService.fullLaunch(
             javaPath = request.javaPath,
             gameDir = request.gameDir,
@@ -270,11 +301,58 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             username = request.username,
             maxMem = request.maxMemory,
             isolateVersion = request.isolateVersion,
-            accessToken = request.accessToken,
-            uuid = request.uuid,
+            accessToken = token,
+            uuid = uuid,
             userType = request.userType,
             emit = { event -> _events.tryEmit(event) },
         )
+    }
+
+    companion object {
+        /** token 剩余有效期低于该值即视为"即将过期"，触发自动续期。 */
+        internal val TOKEN_RENEW_LEAD = 5 * 60 * 1000L
+    }
+
+    /**
+     * 正版 / 离线账户的严格区分与在线 token 自动续期。
+     *
+     * - 离线（userType=legacy）：放行，返回占位 token。
+     * - 正版（userType=msa）：必须能通过 accountId / uuid 定位到已登录账户，且
+     *   token 不得为占位符；若 token 已过期或 5 分钟内将过期，则用 refresh token
+     *   自动续期并回写账户库。
+     *
+     * @return 用于本次启动的 (accessToken, uuid)
+     */
+    internal suspend fun ensureValidLaunchAccount(request: LaunchRequest): Pair<String, String> {
+        val isOnline = request.userType.equals("msa", ignoreCase = true)
+        if (!isOnline) {
+            return request.accessToken to request.uuid
+        }
+        val accounts = authStore.load()
+        val account = (request.accountId.takeIf { it.isNotBlank() }
+            ?.let { id -> accounts.firstOrNull { it.id == id } })
+            ?: accounts.firstOrNull { it.uuid == request.uuid && it.type == "online" }
+            ?: throw LauncherException("未找到对应的正版账户，请先在账户页登录微软账号")
+        if (request.accessToken.isBlank() || request.accessToken == "0") {
+            throw LauncherException("正版账户缺少有效的登录令牌，请重新登录")
+        }
+        val expiresSoon = account.msExpiresAt > 0 &&
+            System.currentTimeMillis() >= account.msExpiresAt - TOKEN_RENEW_LEAD
+        if (expiresSoon && account.refreshToken.isNotBlank()) {
+            try {
+                val refreshed = MicrosoftAuthService.refreshAccount(account)
+                authStore.add(refreshed)
+                _events.tryEmit(LauncherEvent.AccountsChanged(authStore.load()))
+                Logger.info("正版账户 token 即将过期，已自动续期: ${refreshed.username}")
+                return refreshed.accessToken to refreshed.uuid
+            } catch (e: Exception) {
+                Logger.error("正版账户自动续期失败，改用已缓存 token: ${e.message}")
+            }
+        }
+        val cachedToken = account.accessToken.takeIf { it.isNotBlank() } ?: request.accessToken
+        val cachedUuid = account.uuid.takeIf { it.isNotBlank() } ?: request.uuid
+        return cachedToken to cachedUuid
+    }
 
     /**
      * 根据版本所需 Java 主版本号，在已安装 Java 中解析最合适的启动 Java。
