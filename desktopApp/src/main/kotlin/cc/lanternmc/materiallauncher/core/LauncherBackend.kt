@@ -46,6 +46,7 @@ import cc.lanternmc.materiallauncher.api.LaunchRequest
 import cc.lanternmc.materiallauncher.api.MinecraftVersionEntry
 import cc.lanternmc.materiallauncher.api.RunningGameInfo
 import cc.lanternmc.materiallauncher.core.auth.MicrosoftAuthService
+import cc.lanternmc.materiallauncher.core.config.AppDataPaths
 import cc.lanternmc.materiallauncher.core.config.AppDataPathsResolver
 import cc.lanternmc.materiallauncher.core.config.AuthStore
 import cc.lanternmc.materiallauncher.core.config.DownloadConfigStore
@@ -74,13 +75,24 @@ import cc.lanternmc.materiallauncher.core.util.compareMinecraftVersion
 /**
  * 后端实现：实现 [LauncherApi]（前端调用）与 [LauncherEventBus]（前端订阅）。
  * 前端只依赖 [cc.lanternmc.materiallauncher.api]，绝不直接触碰本类以外的东西。
+ *
+ * @param dataDirectory 可选：覆盖启动器数据目录（config/auth/instances 存放处）。
+ *        测试必须传入独立临时目录，避免任何读写/删除波及真实用户数据。
  */
-class LauncherBackend : LauncherApi, LauncherEventBus {
+class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, LauncherEventBus {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val json = Json { ignoreUnknownKeys = true }
 
-    private val paths = AppDataPathsResolver.resolve()
+    private val paths = dataDirectory?.let { dir ->
+        val file = File(dir)
+        file.mkdirs()
+        AppDataPaths(
+            directory = file.absolutePath,
+            config = File(file, "config.toml").absolutePath,
+            javaIndex = File(file, "java-index.toml").absolutePath,
+        )
+    } ?: AppDataPathsResolver.resolve()
     internal val configStore = DownloadConfigStore(paths)
     internal val authStore = AuthStore(File(paths.directory, "auth.toml").absolutePath)
     internal val instanceStore = InstanceStore(File(paths.directory, "instances.toml").absolutePath)

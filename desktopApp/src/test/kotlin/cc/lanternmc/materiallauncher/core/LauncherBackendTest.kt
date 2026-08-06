@@ -18,7 +18,26 @@ import kotlinx.coroutines.runBlocking
 
 class LauncherBackendTest {
 
-    private val backend = LauncherBackend()
+    /**
+     * 关键安全措施：backend 必须运行在独立临时数据目录上，
+     * config/auth/instances 全部隔离，绝不触碰真实 .minecraft 或用户数据。
+     */
+    private val testDataDir: File = createTempDir()
+    private val testMcDir: File = createTempDir()
+    private val backend = LauncherBackend(dataDirectory = testDataDir.absolutePath)
+
+    init {
+        // 双重保险：把 backend 的 minecraft 路径也重定向到临时目录
+        val cfg = backend.configStore.load()
+        backend.configStore.save(
+            cfg.copy(
+                minecraft = cc.lanternmc.materiallauncher.api.DownloadPathConfig(
+                    path = testMcDir.absolutePath,
+                    source = "custom",
+                ),
+            ),
+        )
+    }
 
     // ---- 离线账户：放行占位 token ----
 
