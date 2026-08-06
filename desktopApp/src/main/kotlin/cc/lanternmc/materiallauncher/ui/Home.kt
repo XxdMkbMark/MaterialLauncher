@@ -65,8 +65,11 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -108,12 +111,12 @@ fun SampleHome() {
     }
 }
 
-enum class Destination (val route: String, val label: String, val icon: ImageVector,val showInNavigationRail: Boolean = true) {
-    HOME("home", "主页", Icons.Rounded.Home, false),
+enum class Destination (val route: String, val label: String, val icon: ImageVector, val showInNavigationRail: Boolean = true) {
+    HOME("home", "主页", Icons.Rounded.Home, showInNavigationRail = false),
     DOWNLOAD("download", "下载", Icons.Rounded.Download),
+    USERS("users", "档案", Icons.Rounded.Person),
     VERSIONS("versions","版本", Icons.Rounded.Checklist),
     SETTINGS("settings", "设置", Icons.Rounded.Settings),
-    USERS("users", "用户档案", Icons.Rounded.ManageAccounts),
 }
 
 @Composable
@@ -124,9 +127,9 @@ fun AppNavHost (navController: NavHostController, startDestination: Destination,
                 when (destination) {
                     Destination.HOME -> SampleHome()
                     Destination.DOWNLOAD -> SampleDownloadPage()
+                    Destination.USERS -> SampleUsersManagement()
                     Destination.VERSIONS -> SampleVersionsManagement()
                     Destination.SETTINGS -> SampleSettings()
-                    Destination.USERS -> SampleUsersManagement()
                 }
             }
         }
@@ -245,7 +248,7 @@ fun Home(modifier: Modifier = Modifier) {
                                     icon = {
                                         Icon(destination.icon, contentDescription = "")
                                     },
-                                    label = { Text(destination.label) }
+                                    label = { Text(text = destination.label, textAlign = TextAlign.Center) }
                                 )
                             }
 
