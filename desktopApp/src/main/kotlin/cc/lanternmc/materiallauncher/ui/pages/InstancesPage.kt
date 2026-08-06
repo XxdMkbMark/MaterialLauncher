@@ -27,12 +27,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -60,6 +64,7 @@ fun InstancesPage(
     onMessage: (String) -> Unit,
 ) {
     var instances by remember { mutableStateOf<List<GameInstance>>(emptyList()) }
+    var editing by remember { mutableStateOf<GameInstance?>(null) }
     val scope = rememberCoroutineScope()
 
     fun refresh() {
@@ -115,6 +120,9 @@ fun InstancesPage(
                                 Icon(Icons.Default.PlayArrow, contentDescription = null)
                                 Text("启动")
                             }
+                            IconButton(onClick = { editing = instance }) {
+                                Icon(Icons.Default.Settings, contentDescription = "实例设置")
+                            }
                             IconButton(onClick = {
                                 scope.launch {
                                     val ok = api.deleteInstance(instance.id)
@@ -133,5 +141,91 @@ fun InstancesPage(
                 }
             }
         }
+    }
+
+    // 编辑实例设置对话框：每个实例独立管理版本 / Java / 内存 / JVM 参数
+    editing?.let { instance ->
+        var name by remember(instance.id) { mutableStateOf(instance.name) }
+        var versionId by remember(instance.id) { mutableStateOf(instance.versionId) }
+        var javaPath by remember(instance.id) { mutableStateOf(instance.javaPath) }
+        var maxMemory by remember(instance.id) { mutableStateOf(instance.maxMemory) }
+        var jvmArgs by remember(instance.id) { mutableStateOf(instance.jvmArgs) }
+
+        AlertDialog(
+            onDismissRequest = { editing = null },
+            title = { Text("实例设置 - ${instance.name}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("名称") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = versionId,
+                        onValueChange = { versionId = it },
+                        label = { Text("游戏版本（如 1.21.1）") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = javaPath,
+                        onValueChange = { javaPath = it },
+                        label = { Text("Java 路径（留空自动选择）") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = maxMemory,
+                        onValueChange = { maxMemory = it },
+                        label = { Text("最大内存（如 4096M / 4G）") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = jvmArgs,
+                        onValueChange = { jvmArgs = it },
+                        label = { Text("额外 JVM 参数（空格分隔）") },
+                        singleLine = true,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    Text(
+                        "游戏目录：${instance.gameDir}（不可修改）",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = {
+                    scope.launch {
+                        runCatching {
+                            api.saveInstance(
+                                instance.copy(
+                                    name = name.trim().ifBlank { instance.name },
+                                    versionId = versionId.trim(),
+                                    javaPath = javaPath.trim(),
+                                    maxMemory = maxMemory.trim().ifBlank { "2048M" },
+                                    jvmArgs = jvmArgs.trim(),
+                                ),
+                            )
+                        }.onSuccess {
+                            editing = null
+                            refresh()
+                            onMessage("已保存实例 ${instance.name} 的设置")
+                        }.onFailure { e ->
+                            onMessage("保存失败: ${e.message}")
+                        }
+                    }
+                }) {
+                    Text("保存")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { editing = null }) { Text("取消") }
+            },
+        )
     }
 }
