@@ -85,7 +85,8 @@ class AssetDownloader {
                         while (attempts < MAX_ASSET_ATTEMPTS) {
                             attempts++
                             try {
-                                downloadWithMirrorFallback(url, source, targetFile.absolutePath)
+                                // 校验失败后重试必须 force：损坏的 dest 不能被"断点续传已存在"逻辑跳过
+                                downloadWithMirrorFallback(url, source, targetFile.absolutePath, force = attempts > 1)
                                 if (Sha1.isFileValid(targetFile.absolutePath, asset.hash, asset.size)) {
                                     return@withPermit
                                 }
@@ -131,12 +132,18 @@ class AssetDownloader {
         url: String,
         source: DownloadMirrorSource,
         dest: String? = null,
+        force: Boolean = false,
     ): ByteArray {
         var lastError: Exception? = null
         for (candidate in MirrorUrlRewriter.candidates(url, source)) {
             try {
                 if (dest != null) {
-                    HttpUtil.downloadFile(candidate, dest) { _, _ -> }
+                    // 强制重下时先删掉可能损坏的旧文件与残留 .part，避免续传拼接旧数据
+                    if (force) {
+                        File(dest).delete()
+                        File("$dest.part").delete()
+                    }
+                    HttpUtil.downloadFile(candidate, dest, { _, _ -> }, force = force)
                     return ByteArray(0)
                 }
                 return HttpUtil.getBytes(candidate)

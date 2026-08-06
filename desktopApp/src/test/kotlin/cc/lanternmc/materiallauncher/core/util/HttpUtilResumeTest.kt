@@ -48,9 +48,9 @@ class HttpUtilResumeTest {
             part.writeBytes(content.copyOfRange(0, 100_000))
 
             var lastProgress = 0L
-            HttpUtil.downloadFile("http://127.0.0.1:${server.address.port}/file", dest) { done, _ ->
+            HttpUtil.downloadFile("http://127.0.0.1:${server.address.port}/file", dest, onProgress = { done, _ ->
                 lastProgress = done
-            }
+            })
 
             // 最终文件完整
             val finalFile = File(dest)
@@ -72,7 +72,7 @@ class HttpUtilResumeTest {
         val server = startRangeServer()
         val dest = File.createTempFile("fresh", ".bin").absolutePath
         try {
-            HttpUtil.downloadFile("http://127.0.0.1:${server.address.port}/file", dest) { _, _ -> }
+            HttpUtil.downloadFile("http://127.0.0.1:${server.address.port}/file", dest, onProgress = { _, _ -> })
             assertContentEquals(content, File(dest).readBytes())
         } finally {
             server.stop(0)

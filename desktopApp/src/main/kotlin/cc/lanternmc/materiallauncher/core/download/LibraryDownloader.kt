@@ -89,7 +89,7 @@ class LibraryDownloader {
             for (candidate in MirrorUrlRewriter.candidates(artifact.url, source)) {
                 try {
                     File(targetPath).delete()
-                    HttpUtil.downloadFile(candidate, targetPath) { _, _ -> }
+                    HttpUtil.downloadFile(candidate, targetPath, onProgress = { _, _ -> })
                     if (Sha1.isFileValid(targetPath, artifact.sha1, artifact.size)) return
                     File(targetPath).delete()
                 } catch (e: Exception) {

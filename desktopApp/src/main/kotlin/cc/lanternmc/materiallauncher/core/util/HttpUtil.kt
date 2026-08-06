@@ -154,6 +154,7 @@ object HttpUtil {
      * 携带 Range 头从断点继续；全部完成后原子重命名为最终文件。
      *
      * 服务器不支持 Range（返回 200 而非 206）时自动从头重下。
+     * [force] 为 true 时忽略已存在的最终文件（调用方校验失败后强制重下）。
      * 网络抖动（连接失败/超时）时自动重试，最多 [MAX_RETRIES] 次。
      * [onProgress] 报告整个文件的累计下载进度（含续传部分）。
      */
@@ -161,14 +162,16 @@ object HttpUtil {
         url: String,
         dest: String,
         onProgress: (downloaded: Long, total: Long) -> Unit,
+        force: Boolean = false,
     ): Unit = retryTransient {
         withContext(Dispatchers.IO) {
             val part = Path.of("$dest.part")
             Files.createDirectories(part.parent)
             var existing = if (Files.exists(part)) Files.size(part) else 0L
-            // 已完成的部分恰为完整文件（上次移动失败）时直接复用；空文件不算完成
+            // 已完成的部分恰为完整文件（上次移动失败）时直接复用；空文件不算完成。
+            // 注意：校验失败的调用方必须传 force=true，否则损坏的 dest 会被当作"已下载"跳过。
             val finalPath = Path.of(dest)
-            if (existing == 0L && Files.exists(finalPath) && Files.size(finalPath) > 0) {
+            if (!force && existing == 0L && Files.exists(finalPath) && Files.size(finalPath) > 0) {
                 // 清理可能残留的 .part（目标已完整，无需续传）
                 if (Files.exists(part)) Files.deleteIfExists(part)
                 return@withContext
@@ -183,7 +186,8 @@ object HttpUtil {
 
             val status = response.statusCode()
             // 206 Partial Content：续传；200：服务器忽略 Range，从头下
-            if (status == 200 && existing > 0) existing = 0L
+            val resume = status == 206 && existing > 0
+            if (!resume) existing = 0L
             check(status in 200..299) { "HTTP $status" }
 
             val contentRangeTotal = response.headers().firstValue("Content-Range")
@@ -199,11 +203,20 @@ object HttpUtil {
             var downloaded = existing
             var lastReport = System.currentTimeMillis()
             response.body().use { input ->
-                Files.newOutputStream(
-                    part,
-                    java.nio.file.StandardOpenOption.APPEND,
-                    java.nio.file.StandardOpenOption.CREATE,
-                ).use { output ->
+                // 续传时追加；从头下载时截断（覆盖 .part 里残留的旧数据，避免拼接损坏）
+                val openOptions = if (resume) {
+                    arrayOf(
+                        java.nio.file.StandardOpenOption.APPEND,
+                        java.nio.file.StandardOpenOption.CREATE,
+                    )
+                } else {
+                    arrayOf(
+                        java.nio.file.StandardOpenOption.WRITE,
+                        java.nio.file.StandardOpenOption.CREATE,
+                        java.nio.file.StandardOpenOption.TRUNCATE_EXISTING,
+                    )
+                }
+                Files.newOutputStream(part, *openOptions).use { output ->
                     val buffer = ByteArray(64 * 1024)
                     while (true) {
                         coroutineContext.ensureActive()
