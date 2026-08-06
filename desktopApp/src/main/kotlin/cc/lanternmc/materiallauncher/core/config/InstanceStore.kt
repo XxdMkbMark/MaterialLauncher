@@ -1,0 +1,115 @@
+/*
+ * Copyright (C) 2026 Mark <github@xxdmkbmark> & Pidan <github@bretren>
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+package cc.lanternmc.materiallauncher.core.config
+
+import java.io.File
+import java.time.OffsetDateTime
+import java.util.UUID
+import cc.lanternmc.materiallauncher.api.GameInstance
+import cc.lanternmc.materiallauncher.core.util.Logger
+import cc.lanternmc.materiallauncher.core.util.Toml
+
+/** instances.toml 多实例持久化：[[instance]] 数组表。 */
+class InstanceStore(private val path: String) {
+
+    fun load(): List<GameInstance> {
+        val file = File(path)
+        if (!file.isFile) return emptyList()
+        val doc = runCatching { Toml.parse(file.readText()) }.getOrNull() ?: return emptyList()
+        return doc.section("instance").items.mapNotNull { item ->
+            val id = item["id"] ?: return@mapNotNull null
+            GameInstance(
+                id = id,
+                name = item["name"].orEmpty(),
+                versionId = item["version_id"].orEmpty(),
+                gameDir = item["game_dir"].orEmpty(),
+                javaPath = item["java_path"].orEmpty(),
+                maxMemory = item["max_memory"] ?: "2048M",
+                jvmArgs = item["jvm_args"].orEmpty(),
+                createdAt = item["created_at"].orEmpty(),
+                lastLaunched = item["last_launched"].orEmpty(),
+            )
+        }
+    }
+
+    fun save(instances: List<GameInstance>) {
+        val content = buildString {
+            appendLine("# Material Launcher instances. Generated automatically.")
+            appendLine("version = 1")
+            for (instance in instances) {
+                appendLine()
+                appendLine("[[instance]]")
+                appendLine("id = ${Toml.quote(instance.id)}")
+                appendLine("name = ${Toml.quote(instance.name)}")
+                appendLine("version_id = ${Toml.quote(instance.versionId)}")
+                appendLine("game_dir = ${Toml.quote(instance.gameDir)}")
+                appendLine("java_path = ${Toml.quote(instance.javaPath)}")
+                appendLine("max_memory = ${Toml.quote(instance.maxMemory)}")
+                appendLine("jvm_args = ${Toml.quote(instance.jvmArgs)}")
+                appendLine("created_at = ${Toml.quote(instance.createdAt)}")
+                appendLine("last_launched = ${Toml.quote(instance.lastLaunched)}")
+            }
+        }
+        File(path).parentFile?.mkdirs()
+        val tmp = File("$path.tmp")
+        tmp.writeText(content)
+        val target = File(path)
+        if (target.exists()) target.delete()
+        tmp.renameTo(target)
+    }
+
+    fun add(instance: GameInstance): List<GameInstance> {
+        val instances = load().toMutableList()
+        val idx = instances.indexOfFirst { it.id == instance.id }
+        if (idx >= 0) instances[idx] = instance else instances.add(instance)
+        save(instances)
+        return instances
+    }
+
+    fun remove(id: String): List<GameInstance> {
+        val instances = load().filterNot { it.id == id }
+        save(instances)
+        return instances
+    }
+
+    companion object {
+        /** 创建实例：分配 UUID、生成独立的游戏目录（启动器数据目录下 instances/<name>-<shortId>）。 */
+        fun newInstance(
+            name: String,
+            versionId: String,
+            baseDir: String,
+            javaPath: String = "",
+            maxMemory: String = "2048M",
+            jvmArgs: String = "",
+        ): GameInstance {
+            val id = UUID.randomUUID().toString()
+            val shortId = id.take(8)
+            val safeName = name.trim().ifBlank { "Instance" }.replace(Regex("[^a-zA-Z0-9\\u4e00-\\u9fa5_-]"), "_")
+            val gameDir = File(File(baseDir, "instances"), "$safeName-$shortId").absolutePath
+            return GameInstance(
+                id = id,
+                name = name.trim().ifBlank { "Instance" },
+                versionId = versionId,
+                gameDir = gameDir,
+                javaPath = javaPath,
+                maxMemory = maxMemory,
+                jvmArgs = jvmArgs,
+                createdAt = OffsetDateTime.now().toString(),
+            )
+        }
+    }
+}

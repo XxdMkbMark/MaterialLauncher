@@ -36,6 +36,7 @@ import kotlinx.serialization.json.Json
 import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.DownloadProgress
+import cc.lanternmc.materiallauncher.api.GameInstance
 import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.api.JavaReleaseInfo
 import cc.lanternmc.materiallauncher.api.LauncherApi
@@ -48,15 +49,19 @@ import cc.lanternmc.materiallauncher.core.auth.MicrosoftAuthService
 import cc.lanternmc.materiallauncher.core.config.AppDataPathsResolver
 import cc.lanternmc.materiallauncher.core.config.AuthStore
 import cc.lanternmc.materiallauncher.core.config.DownloadConfigStore
+import cc.lanternmc.materiallauncher.core.config.InstanceStore
 import cc.lanternmc.materiallauncher.core.download.AssetDownloader
+import cc.lanternmc.materiallauncher.core.download.DownloadMirrorSource
 import cc.lanternmc.materiallauncher.core.download.JavaVersionService
 import cc.lanternmc.materiallauncher.core.download.LibraryDownloader
 import cc.lanternmc.materiallauncher.core.download.MinecraftVersionService
+import cc.lanternmc.materiallauncher.core.download.MirrorUrlRewriter
 import cc.lanternmc.materiallauncher.core.java.JavaFinder
 import cc.lanternmc.materiallauncher.core.java.JavaIndexer
 import cc.lanternmc.materiallauncher.core.launch.GameProcessManager
 import cc.lanternmc.materiallauncher.core.launch.LauncherException
 import cc.lanternmc.materiallauncher.core.launch.LaunchService
+import cc.lanternmc.materiallauncher.core.model.ClientArtifact
 import cc.lanternmc.materiallauncher.core.model.VersionJson
 import cc.lanternmc.materiallauncher.core.util.ArchiveExtractor
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
@@ -77,6 +82,7 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     private val paths = AppDataPathsResolver.resolve()
     internal val configStore = DownloadConfigStore(paths)
     internal val authStore = AuthStore(File(paths.directory, "auth.toml").absolutePath)
+    internal val instanceStore = InstanceStore(File(paths.directory, "instances.toml").absolutePath)
     private val assetDownloader = AssetDownloader()
     private val libraryDownloader = LibraryDownloader()
     private val gameProcessManager = GameProcessManager()
@@ -139,6 +145,38 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     override fun refreshJavaIndex(): Boolean = javaIndexer.start(force = true)
 
+    override suspend fun deleteMinecraftVersion(gameDir: String, versionId: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val versionDir = File(gameDir, "versions/$versionId")
+            if (!versionDir.isDirectory) return@withContext false
+            val ok = runCatching { versionDir.deleteRecursively() }.getOrDefault(false)
+            if (ok) {
+                Logger.info("已卸载 Minecraft 版本: $versionId")
+            } else {
+                Logger.warn("卸载 Minecraft 版本失败: $versionId")
+            }
+            ok
+        }
+
+    override suspend fun deleteJavaInstallation(javaPath: String): Boolean =
+        withContext(Dispatchers.IO) {
+            val home = File(javaPath).parentFile?.parentFile ?: return@withContext false
+            val launcherJavaDir = configStore.launcherJavaDir()
+            // 只允许删除启动器自管的 Java（位于启动器 java 目录下），避免误删系统 JDK
+            val homePath = home.absolutePath
+            if (!homePath.startsWith(launcherJavaDir)) {
+                Logger.warn("拒绝删除非启动器管理的 Java: $homePath")
+                return@withContext false
+            }
+            val ok = runCatching { home.deleteRecursively() }.getOrDefault(false)
+            if (ok) {
+                Logger.info("已卸载 Java: $homePath")
+                // 触发一次索引刷新，让列表移除该条目
+                javaIndexer.start(force = true)
+            }
+            ok
+        }
+
     // ---------- 远程版本列表 ----------
 
     override suspend fun getMinecraftVersions(): List<MinecraftVersionEntry> =
@@ -193,9 +231,11 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
         }
 
         emitProgress("fetching")
-        val mcPath = configStore.load().minecraft.path
+        val config = configStore.load()
+        val mcPath = config.minecraft.path
+        val source = DownloadMirrorSource.fromConfig(config.mirrorSource)
         try {
-            val manifest = MinecraftVersionService.fetchVersions()
+            val manifest = MinecraftVersionService.fetchVersions(source)
             val entry = manifest.firstOrNull { it.id == versionId }
                 ?: throw LauncherException("未找到版本 $versionId")
 
@@ -203,7 +243,8 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             versionDir.mkdirs()
 
             emitProgress("downloading", 0, 0)
-            val versionJsonBytes = HttpUtil.getBytes(entry.url)
+            // 版本 JSON 也按镜像策略回退
+            val versionJsonBytes = downloadWithMirrorFallback(entry.url, source)
             val versionInfo = json.decodeFromString<VersionJson>(String(versionJsonBytes, Charsets.UTF_8))
             File(versionDir, "$versionId.json").writeBytes(versionJsonBytes)
 
@@ -213,7 +254,8 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             }
             val clientJar = File(versionDir, "$versionId.jar")
             emitProgress("downloading", 0, client.size)
-            HttpUtil.downloadFile(client.url, clientJar.absolutePath) { downloaded, total ->
+            // client jar 按镜像策略回退 + 校验失败自动重下
+            downloadClientWithRetry(client, clientJar.absolutePath, source) { downloaded, total ->
                 emitProgress("downloading", downloaded, if (total > 0) total else client.size)
             }
             if (!Sha1.isFileValid(clientJar.absolutePath, client.sha1, client.size)) {
@@ -225,6 +267,45 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             Logger.error("Minecraft 下载失败: ${e.message}")
             emitProgress("error", error = e.message ?: "unknown error")
         }
+    }
+
+    /** 下载 client jar：镜像回退 + 校验失败自动重下（最多 3 次）。 */
+    private suspend fun downloadClientWithRetry(
+        client: ClientArtifact,
+        dest: String,
+        source: DownloadMirrorSource,
+        onProgress: (Long, Long) -> Unit,
+    ) {
+        var lastError: Exception? = null
+        for (attempt in 1..CLIENT_DOWNLOAD_ATTEMPTS) {
+            for (candidate in MirrorUrlRewriter.candidates(client.url, source)) {
+                try {
+                    File(dest).delete()
+                    HttpUtil.downloadFile(candidate, dest, onProgress)
+                    if (Sha1.isFileValid(dest, client.sha1, client.size)) return
+                    File(dest).delete()
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+            Logger.warn("client 下载失败（第 $attempt 次，将重试）: ${client.url}")
+        }
+        throw lastError ?: IllegalStateException("client 下载失败: ${client.url}")
+    }
+
+    private suspend fun downloadWithMirrorFallback(
+        url: String,
+        source: DownloadMirrorSource,
+    ): ByteArray {
+        var lastError: Exception? = null
+        for (candidate in MirrorUrlRewriter.candidates(url, source)) {
+            try {
+                return HttpUtil.getBytes(candidate)
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        throw lastError ?: IllegalStateException("所有下载源均失败: $url")
     }
 
     private suspend fun downloadJava(javaVersionId: String) {
@@ -297,6 +378,10 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     override suspend fun launchMinecraft(request: LaunchRequest): Int = withContext(Dispatchers.IO) {
         val (token, uuid) = ensureValidLaunchAccount(request)
+        val config = configStore.load()
+        val source = DownloadMirrorSource.fromConfig(config.mirrorSource)
+        val extraJvmArgs = splitArgs(config.jvmArgs)
+        val extraGameArgs = splitArgs(config.gameArgs)
         launchService.fullLaunch(
             javaPath = request.javaPath,
             gameDir = request.gameDir,
@@ -307,13 +392,30 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             accessToken = token,
             uuid = uuid,
             userType = request.userType,
+            source = source,
+            extraJvmArgs = extraJvmArgs,
+            extraGameArgs = extraGameArgs,
             emit = { event -> _events.tryEmit(event) },
         )
+    }
+
+    /** 按空白拆分自定义参数（允许引号分组）。 */
+    private fun splitArgs(raw: String): List<String> {
+        if (raw.isBlank()) return emptyList()
+        val result = mutableListOf<String>()
+        val regex = Regex("\"([^\"]*)\"|(\\S+)")
+        for (match in regex.findAll(raw)) {
+            result.add(match.groupValues[1].ifBlank { match.groupValues[2] })
+        }
+        return result
     }
 
     companion object {
         /** token 剩余有效期低于该值即视为"即将过期"，触发自动续期。 */
         internal val TOKEN_RENEW_LEAD = 5 * 60 * 1000L
+
+        /** client jar 最大下载尝试次数。 */
+        private const val CLIENT_DOWNLOAD_ATTEMPTS = 3
     }
 
     /**
@@ -413,6 +515,91 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     // ---------- 内存建议 ----------
 
     override fun suggestMaxMemoryMb(): Int = gameProcessManager.suggestMaxMemoryMb()
+
+    // ---------- 多实例管理 ----------
+
+    override suspend fun listInstances(): List<GameInstance> = withContext(Dispatchers.IO) {
+        instanceStore.load()
+    }
+
+    override suspend fun createInstance(name: String, versionId: String): GameInstance =
+        withContext(Dispatchers.IO) {
+            val instance = InstanceStore.newInstance(
+                name = name,
+                versionId = versionId,
+                baseDir = paths.directory,
+            )
+            instanceStore.add(instance)
+            Logger.info("已创建实例: ${instance.name} (${instance.id.take(8)}), 版本 $versionId")
+            instance
+        }
+
+    override suspend fun saveInstance(instance: GameInstance) {
+        withContext(Dispatchers.IO) { instanceStore.add(instance) }
+    }
+
+    override suspend fun deleteInstance(instanceId: String): Boolean = withContext(Dispatchers.IO) {
+        val instance = instanceStore.load().firstOrNull { it.id == instanceId }
+            ?: return@withContext false
+        instanceStore.remove(instanceId)
+        // 同时删除实例独立游戏目录（含存档）
+        runCatching { File(instance.gameDir).deleteRecursively() }
+        Logger.info("已删除实例: ${instance.name}")
+        true
+    }
+
+    override suspend fun launchInstance(
+        instanceId: String,
+        username: String,
+        accessToken: String,
+        uuid: String,
+        userType: String,
+    ): Int = withContext(Dispatchers.IO) {
+        val instance = instanceStore.load().firstOrNull { it.id == instanceId }
+            ?: throw LauncherException("未找到实例 $instanceId")
+        if (instance.versionId.isBlank()) throw LauncherException("实例 ${instance.name} 未设置版本")
+        val config = configStore.load()
+        val source = DownloadMirrorSource.fromConfig(config.mirrorSource)
+        val (token, effectiveUuid) = ensureValidLaunchAccount(
+            LaunchRequest(
+                javaPath = "",
+                gameDir = instance.gameDir,
+                versionId = instance.versionId,
+                username = username,
+                maxMemory = instance.maxMemory,
+                isolateVersion = false,
+                accessToken = accessToken,
+                uuid = uuid,
+                userType = userType,
+            ),
+        )
+        val javaPath = instance.javaPath.ifBlank {
+            resolveLaunchJava(instance.gameDir, instance.versionId, javasFirstPath())
+        }
+        val extraJvmArgs = splitArgs(instance.jvmArgs)
+        val extraGameArgs = splitArgs(config.gameArgs)
+        val pid = launchService.fullLaunch(
+            javaPath = javaPath,
+            gameDir = instance.gameDir,
+            versionId = instance.versionId,
+            username = username,
+            maxMem = instance.maxMemory,
+            isolateVersion = false,
+            accessToken = token,
+            uuid = effectiveUuid,
+            userType = userType,
+            source = source,
+            extraJvmArgs = extraJvmArgs,
+            extraGameArgs = extraGameArgs,
+            emit = { event -> _events.tryEmit(event) },
+        )
+        // 记录最后启动时间
+        instanceStore.add(instance.copy(lastLaunched = OffsetDateTime.now().toString()))
+        pid
+    }
+
+    /** 取已索引 Java 中的第一个路径作为兜底。 */
+    private fun javasFirstPath(): String = javaIndexer.cachedResults().firstOrNull()?.path.orEmpty()
 
     // ---------- 账户 ----------
 

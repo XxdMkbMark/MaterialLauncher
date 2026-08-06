@@ -37,6 +37,12 @@ interface LauncherApi {
     suspend fun findJavaPaths(): List<JavaInstallation>
     fun refreshJavaIndex(): Boolean
 
+    /** 卸载已安装的 Minecraft 版本（删除 versions/<id> 目录）。返回是否删除成功。 */
+    suspend fun deleteMinecraftVersion(gameDir: String, versionId: String): Boolean
+
+    /** 卸载启动器自带的 Java（删除其 home 目录）。返回是否删除成功。 */
+    suspend fun deleteJavaInstallation(javaPath: String): Boolean
+
     // ---- 远程版本列表 ----
     suspend fun getMinecraftVersions(): List<MinecraftVersionEntry>
     suspend fun getJavaVersions(): List<JavaReleaseInfo>
@@ -59,6 +65,15 @@ interface LauncherApi {
 
     // ---- 内存建议 ----
     fun suggestMaxMemoryMb(): Int
+
+    // ---- 多实例管理 ----
+    suspend fun listInstances(): List<GameInstance>
+    suspend fun createInstance(name: String, versionId: String): GameInstance
+    suspend fun saveInstance(instance: GameInstance)
+    suspend fun deleteInstance(instanceId: String): Boolean
+
+    /** 启动一个实例（使用实例自身的 gameDir/版本/Java/内存配置）。返回 PID。 */
+    suspend fun launchInstance(instanceId: String, username: String, accessToken: String, uuid: String, userType: String): Int
 
     // ---- 账户 ----
     suspend fun getAccounts(): List<Account>

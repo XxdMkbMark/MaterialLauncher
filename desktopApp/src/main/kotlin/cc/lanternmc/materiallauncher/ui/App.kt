@@ -24,6 +24,9 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Tune
+import androidx.compose.material.icons.filled.ViewList
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -42,17 +45,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import cc.lanternmc.materiallauncher.api.Account
+import cc.lanternmc.materiallauncher.api.DownloadConfig
+import cc.lanternmc.materiallauncher.api.GameInstance
 import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.core.LauncherBackend
+import cc.lanternmc.materiallauncher.ui.components.AdvancedDialog
+import cc.lanternmc.materiallauncher.ui.components.AdvancedSettingsDialogs
 import cc.lanternmc.materiallauncher.ui.pages.AccountDialog
 import cc.lanternmc.materiallauncher.ui.pages.DownloadPage
+import cc.lanternmc.materiallauncher.ui.pages.InstancesPage
 import cc.lanternmc.materiallauncher.ui.pages.LaunchPage
 import cc.lanternmc.materiallauncher.ui.pages.LauncherSidebar
 import cc.lanternmc.materiallauncher.ui.pages.SettingsDialog
 import cc.lanternmc.materiallauncher.ui.pages.SidebarCategory
 import cc.lanternmc.materiallauncher.ui.pages.SidebarItem
 
-private enum class Page { LAUNCH, DOWNLOAD }
+private enum class Page { LAUNCH, DOWNLOAD, INSTANCES }
 
 @Composable
 fun App(backend: LauncherBackend) {
@@ -60,14 +68,23 @@ fun App(backend: LauncherBackend) {
         var page by remember { mutableStateOf(Page.LAUNCH) }
         var launchSignal by remember { mutableIntStateOf(0) }
         var dialog by remember { mutableStateOf<SettingsDialog?>(null) }
+        var advancedDialog by remember { mutableStateOf<AdvancedDialog?>(null) }
         var progressTick by remember { mutableIntStateOf(0) }
         var selectedAccount by remember { mutableStateOf<Account?>(null) }
+        var config by remember { mutableStateOf<DownloadConfig?>(null) }
         val scope = rememberCoroutineScope()
         val snackbarHostState = remember { SnackbarHostState() }
+
+        fun showMessage(message: String) {
+            scope.launch {
+                snackbarHostState.showSnackbar(message, duration = SnackbarDuration.Short)
+            }
+        }
 
         // 加载保存的账户选择与账户列表
         LaunchedEffect(Unit) {
             val cfg = runCatching { backend.getDownloadConfig() }.getOrNull()
+            config = cfg
             val accounts = runCatching { backend.getAccounts() }.getOrDefault(emptyList())
             if (accounts.isNotEmpty()) {
                 selectedAccount = accounts.find { it.id == cfg?.accountId }
@@ -171,6 +188,27 @@ fun App(backend: LauncherBackend) {
                         events = backend.events,
                         onBack = { page = Page.LAUNCH },
                     )
+                    Page.INSTANCES -> InstancesPage(
+                        api = backend,
+                        onLaunchInstance = { instance ->
+                            scope.launch {
+                                val acc = selectedAccount
+                                try {
+                                    val pid = backend.launchInstance(
+                                        instanceId = instance.id,
+                                        username = acc?.username ?: config?.username.orEmpty().ifBlank { "TestUser" },
+                                        accessToken = acc?.accessToken ?: "0",
+                                        uuid = acc?.uuid ?: "00000000-0000-0000-0000-000000000000",
+                                        userType = acc?.userType ?: "legacy",
+                                    )
+                                    showMessage("实例「${instance.name}」已启动, PID=$pid")
+                                } catch (e: Exception) {
+                                    showMessage("启动实例失败: ${e.message}")
+                                }
+                            }
+                        },
+                        onMessage = ::showMessage,
+                    )
                 }
             }
 
@@ -191,6 +229,21 @@ fun App(backend: LauncherBackend) {
                     onDismiss = { dialog = null },
                 )
             }
+
+            AdvancedSettingsDialogs(
+                api = backend,
+                dialog = advancedDialog,
+                config = config,
+                onDismiss = { advancedDialog = null },
+                onApply = { newConfig ->
+                    scope.launch {
+                        backend.saveDownloadConfig(newConfig)
+                        config = newConfig
+                        advancedDialog = null
+                        showMessage("设置已保存")
+                    }
+                },
+            )
 
             LauncherSidebar(
                 modifier = Modifier.align(Alignment.CenterStart),
@@ -215,6 +268,13 @@ fun App(backend: LauncherBackend) {
                         ),
                     ),
                     SidebarCategory(
+                        label = "实例",
+                        icon = Icons.Default.ViewList,
+                        items = listOf(
+                            SidebarItem("多实例管理") { page = Page.INSTANCES },
+                        ),
+                    ),
+                    SidebarCategory(
                         label = "设置",
                         icon = Icons.Default.Settings,
                         items = listOf(
@@ -224,6 +284,8 @@ fun App(backend: LauncherBackend) {
                             SidebarItem("用户名") { dialog = SettingsDialog.USERNAME },
                             SidebarItem("Java") { dialog = SettingsDialog.JAVA },
                             SidebarItem("内存") { dialog = SettingsDialog.MEM },
+                            SidebarItem("下载源") { advancedDialog = AdvancedDialog.MIRROR },
+                            SidebarItem("高级参数") { advancedDialog = AdvancedDialog.ADVANCED_ARGS },
                         ),
                     ),
                 ),

@@ -91,6 +91,9 @@ class DownloadConfigStoreTest {
                 java = DownloadPathConfig(path = "D:\\java", source = "launcher"),
                 username = "Bret",
                 accountId = "acc-99",
+                mirrorSource = "mirror",
+                jvmArgs = "-XX:+UseG1GC -Xmn512M",
+                gameArgs = "--quickPlayMultiplayer 127.0.0.1",
             )
             assertTrue(store.save(config))
             val loaded = store.load()
@@ -99,6 +102,9 @@ class DownloadConfigStoreTest {
             assertEquals("D:\\java", loaded.java.path)
             assertEquals("Bret", loaded.username)
             assertEquals("acc-99", loaded.accountId)
+            assertEquals("mirror", loaded.mirrorSource)
+            assertEquals("-XX:+UseG1GC -Xmn512M", loaded.jvmArgs)
+            assertEquals("--quickPlayMultiplayer 127.0.0.1", loaded.gameArgs)
         } finally {
             dir.deleteRecursively()
         }

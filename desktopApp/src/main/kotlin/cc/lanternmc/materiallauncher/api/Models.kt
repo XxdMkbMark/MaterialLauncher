@@ -46,6 +46,12 @@ data class DownloadConfig(
     val java: DownloadPathConfig = DownloadPathConfig(source = "launcher"),
     val username: String = "TestUser",
     val accountId: String = "",
+    /** 下载源策略：official / mirror / auto。 */
+    val mirrorSource: String = "auto",
+    /** 自定义 JVM 启动参数（空格分隔），追加到默认参数之后。 */
+    val jvmArgs: String = "",
+    /** 自定义游戏参数（空格分隔），追加到默认游戏参数之后。 */
+    val gameArgs: String = "",
 )
 
 @Serializable
@@ -127,4 +133,22 @@ data class RunningGameInfo(
     val username: String = "",
     val alive: Boolean = false,
     val exitCode: Int? = null,
+)
+
+/**
+ * 游戏实例：一个独立命名的隔离游戏环境。
+ * 每个实例拥有自己的 gameDir（独立存档/设置），并锁定一个 MC 版本。
+ */
+@Serializable
+data class GameInstance(
+    val id: String = "",
+    val name: String = "",
+    val versionId: String = "",
+    /** 实例独立游戏目录（绝对路径）。 */
+    val gameDir: String = "",
+    val javaPath: String = "",
+    val maxMemory: String = "2048M",
+    val jvmArgs: String = "",
+    val createdAt: String = "",
+    val lastLaunched: String = "",
 )

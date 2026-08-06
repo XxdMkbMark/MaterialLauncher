@@ -23,6 +23,7 @@ import cc.lanternmc.materiallauncher.core.model.Library
 import cc.lanternmc.materiallauncher.core.model.LibraryRule
 import cc.lanternmc.materiallauncher.core.util.ArchiveExtractor
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
+import cc.lanternmc.materiallauncher.core.util.Logger
 import cc.lanternmc.materiallauncher.core.util.Os
 import cc.lanternmc.materiallauncher.core.util.Sha1
 import cc.lanternmc.materiallauncher.core.util.currentOs
@@ -37,7 +38,12 @@ class LibraryDownloader {
     /**
      * @return 应加入 classpath 的 jar 绝对路径列表
      */
-    suspend fun downloadLibraries(gameDir: String, nativesDir: String, libraries: List<Library>): List<String> {
+    suspend fun downloadLibraries(
+        gameDir: String,
+        nativesDir: String,
+        libraries: List<Library>,
+        source: DownloadMirrorSource = DownloadMirrorSource.AUTO,
+    ): List<String> {
         val libraryDir = File(gameDir, "libraries")
         File(nativesDir).mkdirs()
         val classpath = mutableListOf<String>()
@@ -49,7 +55,7 @@ class LibraryDownloader {
             if (nativeArtifact.second) {
                 val artifact = nativeArtifact.first ?: continue
                 val jarPath = File(libraryDir, artifact.path).absolutePath
-                ensureArtifact(jarPath, artifact)
+                ensureArtifact(jarPath, artifact, source)
                 val excludes = mutableListOf("META-INF/")
                 library.extract?.exclude?.let { excludes.addAll(it) }
                 ArchiveExtractor.extractNativeJar(jarPath, nativesDir, excludes)
@@ -58,24 +64,41 @@ class LibraryDownloader {
 
             val artifact = library.downloads.artifact ?: continue
             val targetPath = File(libraryDir, artifact.path).absolutePath
-            ensureArtifact(targetPath, artifact)
+            ensureArtifact(targetPath, artifact, source)
             classpath.add(targetPath)
         }
         return classpath
     }
 
-    private suspend fun ensureArtifact(targetPath: String, artifact: Artifact) {
+    private suspend fun ensureArtifact(
+        targetPath: String,
+        artifact: Artifact,
+        source: DownloadMirrorSource,
+    ) {
         if (Sha1.isFileValid(targetPath, artifact.sha1, artifact.size)) return
         if (artifact.url.isBlank()) throw IllegalStateException("artifact URL 为空: ${artifact.path}")
-        try {
-            HttpUtil.downloadFile(artifact.url, targetPath) { _, _ -> }
-        } catch (e: Exception) {
-            throw IllegalStateException("下载依赖失败 ${artifact.path}: ${e.message}", e)
+        var lastError: Exception? = null
+        // 失败自动重下 + 按镜像策略回退
+        for (attempt in 1..MAX_LIBRARY_ATTEMPTS) {
+            for (candidate in MirrorUrlRewriter.candidates(artifact.url, source)) {
+                try {
+                    File(targetPath).delete()
+                    HttpUtil.downloadFile(candidate, targetPath) { _, _ -> }
+                    if (Sha1.isFileValid(targetPath, artifact.sha1, artifact.size)) return
+                    File(targetPath).delete()
+                } catch (e: Exception) {
+                    lastError = e
+                }
+            }
+            Logger.warn("依赖下载失败（第 $attempt 次，将重试）: ${artifact.path}")
         }
-        if (!Sha1.isFileValid(targetPath, artifact.sha1, artifact.size)) {
-            File(targetPath).delete()
-            throw IllegalStateException("下载的文件未通过 SHA-1/大小校验: ${artifact.path}")
-        }
+        File(targetPath).delete()
+        throw IllegalStateException("下载依赖失败 ${artifact.path}: ${lastError?.message}")
+    }
+
+    companion object {
+        /** 单个依赖库的最大下载尝试次数（含重试）。 */
+        internal const val MAX_LIBRARY_ATTEMPTS = 3
     }
 
     private fun nativeArtifactForCurrentPlatform(library: Library): Pair<Artifact?, Boolean> {

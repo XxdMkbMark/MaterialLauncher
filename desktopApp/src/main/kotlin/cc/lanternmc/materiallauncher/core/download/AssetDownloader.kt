@@ -33,14 +33,13 @@ import cc.lanternmc.materiallauncher.core.util.Sha1
  * 并发下载 / 校验 Minecraft 的 assets 资源（官方 resources.download.minecraft.net）。
  */
 class AssetDownloader {
-    companion object {
-        private const val ASSET_BASE_URL = "https://resources.download.minecraft.net"
-        private const val MAX_CONCURRENCY = 20
-    }
-
     private val json = Json { ignoreUnknownKeys = true }
 
-    suspend fun downloadAssets(gameDir: String, assetIndex: AssetIndexInfo) {
+    suspend fun downloadAssets(
+        gameDir: String,
+        assetIndex: AssetIndexInfo,
+        source: DownloadMirrorSource = DownloadMirrorSource.AUTO,
+    ) {
         val assetsDir = File(gameDir, "assets")
         val indexesDir = File(assetsDir, "indexes")
         val objectsDir = File(assetsDir, "objects")
@@ -49,7 +48,8 @@ class AssetDownloader {
 
         val indexFile = File(indexesDir, "${assetIndex.id}.json")
         if (!indexFile.isFile) {
-            val bytes = HttpUtil.getBytes(assetIndex.url)
+            // 资源索引也走镜像回退
+            val bytes = downloadWithMirrorFallback(assetIndex.url, source)
             indexFile.writeBytes(bytes)
         }
 
@@ -68,12 +68,23 @@ class AssetDownloader {
                         if (Sha1.isFileValid(targetFile.absolutePath, asset.hash, asset.size)) return@withPermit
                         targetDir.mkdirs()
                         val url = "$ASSET_BASE_URL/$hashPrefix/${asset.hash}"
-                        try {
-                            HttpUtil.downloadFile(url, targetFile.absolutePath) { _, _ -> }
-                        } catch (e: Exception) {
-                            failures.incrementAndGet()
-                            Logger.warn("下载 Asset 失败: ${e.message}")
+                        // 失败自动重下：最多尝试 3 次，且按镜像策略回退
+                        var attempts = 0
+                        while (attempts < MAX_ASSET_ATTEMPTS) {
+                            attempts++
+                            try {
+                                downloadWithMirrorFallback(url, source, targetFile.absolutePath)
+                                if (Sha1.isFileValid(targetFile.absolutePath, asset.hash, asset.size)) {
+                                    return@withPermit
+                                }
+                            } catch (e: Exception) {
+                                if (attempts < MAX_ASSET_ATTEMPTS) {
+                                    Logger.warn("Asset 下载失败（第 $attempts 次，将重试）: ${e.message}")
+                                }
+                            }
                         }
+                        failures.incrementAndGet()
+                        Logger.warn("下载 Asset 失败（已重试 $MAX_ASSET_ATTEMPTS 次）: $url")
                     }
                 }
             }
@@ -97,5 +108,34 @@ class AssetDownloader {
             }
         }
         Logger.info("官方 Assets 资源全部校验/补齐完毕！")
+    }
+
+    /** 按镜像策略尝试下载；[dest] 非空时写入文件，否则返回字节。 */
+    private suspend fun downloadWithMirrorFallback(
+        url: String,
+        source: DownloadMirrorSource,
+        dest: String? = null,
+    ): ByteArray {
+        var lastError: Exception? = null
+        for (candidate in MirrorUrlRewriter.candidates(url, source)) {
+            try {
+                if (dest != null) {
+                    HttpUtil.downloadFile(candidate, dest) { _, _ -> }
+                    return ByteArray(0)
+                }
+                return HttpUtil.getBytes(candidate)
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        throw lastError ?: IllegalStateException("所有下载源均失败: $url")
+    }
+
+    companion object {
+        private const val ASSET_BASE_URL = "https://resources.download.minecraft.net"
+        private const val MAX_CONCURRENCY = 20
+
+        /** 单个 Asset 文件的最大下载尝试次数（含重试）。 */
+        internal const val MAX_ASSET_ATTEMPTS = 3
     }
 }

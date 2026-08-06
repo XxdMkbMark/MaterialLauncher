@@ -150,8 +150,12 @@ object HttpUtil {
         }
 
     /**
-     * 下载到临时文件后原子重命名，下载过程中以 ≤100ms 频率回调进度。
+     * 断点续传下载：先写 `dest.part`，中断时保留该部分文件，下次调用自动
+     * 携带 Range 头从断点继续；全部完成后原子重命名为最终文件。
+     *
+     * 服务器不支持 Range（返回 200 而非 206）时自动从头重下。
      * 网络抖动（连接失败/超时）时自动重试，最多 [MAX_RETRIES] 次。
+     * [onProgress] 报告整个文件的累计下载进度（含续传部分）。
      */
     suspend fun downloadFile(
         url: String,
@@ -159,40 +163,61 @@ object HttpUtil {
         onProgress: (downloaded: Long, total: Long) -> Unit,
     ): Unit = retryTransient {
         withContext(Dispatchers.IO) {
-            val tmp = Path.of("$dest.tmp")
-            try {
-                val request = HttpRequest.newBuilder(URI.create(url))
-                    .timeout(Duration.ofSeconds(120))
-                    .GET()
-                    .build()
-                val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-                check(response.statusCode() in 200..299) { "HTTP ${response.statusCode()}" }
-                val total = response.headers().firstValueAsLong("Content-Length").orElse(-1L)
-                Files.createDirectories(tmp.parent)
-                var downloaded = 0L
-                var lastReport = System.currentTimeMillis()
-                response.body().use { input ->
-                    Files.newOutputStream(tmp).use { output ->
-                        val buffer = ByteArray(64 * 1024)
-                        while (true) {
-                            coroutineContext.ensureActive()
-                            val read = input.read(buffer)
-                            if (read < 0) break
-                            output.write(buffer, 0, read)
-                            downloaded += read
-                            val now = System.currentTimeMillis()
-                            if (now - lastReport >= 100) {
-                                lastReport = now
-                                onProgress(downloaded, total)
-                            }
+            val part = Path.of("$dest.part")
+            Files.createDirectories(part.parent)
+            var existing = if (Files.exists(part)) Files.size(part) else 0L
+            // 已完成的部分恰为完整文件（上次移动失败）时直接复用；空文件不算完成
+            val finalPath = Path.of(dest)
+            if (existing == 0L && Files.exists(finalPath) && Files.size(finalPath) > 0) return@withContext
+
+            val builder = HttpRequest.newBuilder(URI.create(url))
+                .timeout(Duration.ofSeconds(120))
+            if (existing > 0) {
+                builder.header("Range", "bytes=$existing-")
+            }
+            val response = client.send(builder.GET().build(), HttpResponse.BodyHandlers.ofInputStream())
+
+            val status = response.statusCode()
+            // 206 Partial Content：续传；200：服务器忽略 Range，从头下
+            if (status == 200 && existing > 0) existing = 0L
+            check(status in 200..299) { "HTTP $status" }
+
+            val contentRangeTotal = response.headers().firstValue("Content-Range")
+                .orElse(null)?.substringAfter('/')?.toLongOrNull()
+            val totalHeader = response.headers().firstValueAsLong("Content-Length").orElse(-1L)
+            val total = when {
+                contentRangeTotal != null && contentRangeTotal > 0 -> contentRangeTotal
+                totalHeader > 0 && existing > 0 -> existing + totalHeader
+                totalHeader > 0 -> totalHeader
+                else -> -1L
+            }
+
+            var downloaded = existing
+            var lastReport = System.currentTimeMillis()
+            response.body().use { input ->
+                Files.newOutputStream(
+                    part,
+                    java.nio.file.StandardOpenOption.APPEND,
+                    java.nio.file.StandardOpenOption.CREATE,
+                ).use { output ->
+                    val buffer = ByteArray(64 * 1024)
+                    while (true) {
+                        coroutineContext.ensureActive()
+                        val read = input.read(buffer)
+                        if (read < 0) break
+                        output.write(buffer, 0, read)
+                        downloaded += read
+                        val now = System.currentTimeMillis()
+                        if (now - lastReport >= 100) {
+                            lastReport = now
+                            onProgress(downloaded, total)
                         }
                     }
                 }
-                onProgress(downloaded, total)
-                Files.move(tmp, Path.of(dest), StandardCopyOption.REPLACE_EXISTING)
-            } finally {
-                Files.deleteIfExists(tmp)
             }
+            onProgress(downloaded, total)
+            // 完成后原子移动为最终文件；若用户期望完整文件则校验由调用方负责
+            Files.move(part, finalPath, StandardCopyOption.REPLACE_EXISTING)
         }
     }
 

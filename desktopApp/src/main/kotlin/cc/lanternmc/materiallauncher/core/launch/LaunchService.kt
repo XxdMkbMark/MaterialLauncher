@@ -27,6 +27,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.core.download.AssetDownloader
+import cc.lanternmc.materiallauncher.core.download.DownloadMirrorSource
 import cc.lanternmc.materiallauncher.core.download.LibraryDownloader
 import cc.lanternmc.materiallauncher.core.model.VersionJson
 import cc.lanternmc.materiallauncher.core.util.Logger
@@ -61,6 +62,9 @@ class LaunchService(
         accessToken: String = "0",
         uuid: String = "00000000-0000-0000-0000-000000000000",
         userType: String = "legacy",
+        source: DownloadMirrorSource = DownloadMirrorSource.AUTO,
+        extraJvmArgs: List<String> = emptyList(),
+        extraGameArgs: List<String> = emptyList(),
         emit: (LauncherEvent) -> Unit,
     ): Int = withContext(Dispatchers.IO) {
         val actualGameDir = if (isolateVersion) File(gameDir, "versions/$versionId").absolutePath else gameDir
@@ -79,11 +83,11 @@ class LaunchService(
         OptionsSanitizer.sanitize(if (isolateVersion) File(actualGameDir) else File(gameDir))
 
         Logger.info("[2/4] 正在多线程下载/补齐 Assets 资源...")
-        assetDownloader.downloadAssets(gameDir, versionInfo.assetIndex)
+        assetDownloader.downloadAssets(gameDir, versionInfo.assetIndex, source)
 
         Logger.info("[3/4] 正在检查并补齐 Libraries 依赖库...")
         val nativesDir = File(versionDir, "natives").absolutePath
-        val classpaths = libraryDownloader.downloadLibraries(gameDir, nativesDir, versionInfo.libraries)
+        val classpaths = libraryDownloader.downloadLibraries(gameDir, nativesDir, versionInfo.libraries, source)
             .toMutableList()
         classpaths.add(File(versionDir, "$versionId.jar").absolutePath)
 
@@ -103,6 +107,8 @@ class LaunchService(
             accessToken = accessToken,
             uuid = uuid,
             userType = userType,
+            extraJvmArgs = extraJvmArgs,
+            extraGameArgs = extraGameArgs,
             emit = emit,
         )
         pid
@@ -120,6 +126,8 @@ class LaunchService(
         accessToken: String,
         uuid: String,
         userType: String,
+        extraJvmArgs: List<String> = emptyList(),
+        extraGameArgs: List<String> = emptyList(),
         emit: (LauncherEvent) -> Unit,
     ): Int = withContext(Dispatchers.IO) {
         val nativesPath = File(gameDir, "versions/$versionId/natives").absolutePath
@@ -131,6 +139,7 @@ class LaunchService(
             "-Dstdout.encoding=UTF-8",
             "-Dstderr.encoding=UTF-8",
         )
+        jvmArgs.addAll(extraJvmArgs)
         val javaMajor = detectJavaMajor(javaPath)
         if (usesLwjgl2(versionId)) {
             addLwjgl2CompatibilityArgs(javaPath, javaMajor, jvmArgs)
@@ -148,7 +157,7 @@ class LaunchService(
             }
         }
 
-        val mcArgs = listOf(
+        val mcArgs = mutableListOf(
             "--username", username,
             "--version", versionId,
             "--gameDir", actualGameDir,
@@ -159,6 +168,7 @@ class LaunchService(
             "--userType", userType,
             "--versionType", "release",
         )
+        mcArgs.addAll(extraGameArgs)
 
         val command = listOf(javaPath) + jvmArgs + listOf("-cp", classpathArg, versionInfo.mainClass) + mcArgs
         val builder = ProcessBuilder(command)

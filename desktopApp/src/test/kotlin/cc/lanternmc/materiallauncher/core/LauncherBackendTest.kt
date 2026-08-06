@@ -7,9 +7,11 @@ package cc.lanternmc.materiallauncher.core
 import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.LaunchRequest
 import cc.lanternmc.materiallauncher.core.launch.LauncherException
+import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
@@ -147,5 +149,26 @@ class LauncherBackendTest {
         // 任务被取消（delay 抛 CancellationException）并从表中移除
         assertTrue(!backend.activeDownloads.containsKey("java:cancel-me"))
         assertTrue(!finished)
+    }
+
+    // ---- 卸载已安装版本 ----
+
+    @Test
+    fun `deleteMinecraftVersion removes version dir`() = runBlocking {
+        val dir = createTempDir()
+        try {
+            val versionDir = File(dir, "versions/1.20.1")
+            versionDir.mkdirs()
+            File(versionDir, "1.20.1.json").writeText("{}")
+            File(versionDir, "1.20.1.jar").writeText("jar")
+
+            assertTrue(backend.deleteMinecraftVersion(dir.absolutePath, "1.20.1"))
+            assertFalse(versionDir.exists())
+
+            // 不存在的版本返回 false
+            assertFalse(backend.deleteMinecraftVersion(dir.absolutePath, "1.19"))
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 }

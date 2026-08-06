@@ -28,9 +28,10 @@ object MinecraftVersionService {
 
     /**
      * 拉取官方版本清单，过滤 release 且 ≥1.6，按版本号倒序。
+     * [source] 控制是否优先使用镜像源（AUTO 时镜像失败会回退官方）。
      */
-    suspend fun fetchVersions(): List<MinecraftVersionEntry> {
-        val text = HttpUtil.getString(MANIFEST_URL)
+    suspend fun fetchVersions(source: DownloadMirrorSource = DownloadMirrorSource.AUTO): List<MinecraftVersionEntry> {
+        val text = fetchWithMirrorFallback(MANIFEST_URL, source)
         val manifest = json.decodeFromString<MinecraftManifest>(text)
         return manifest.versions
             .filter { it.type == "release" && compareMinecraftVersion(it.id, "1.6") >= 0 }
@@ -43,5 +44,18 @@ object MinecraftVersionService {
                     releaseTime = it.releaseTime,
                 )
             }
+    }
+
+    /** 按镜像策略依次尝试候选 URL，全部失败才抛异常。 */
+    private suspend fun fetchWithMirrorFallback(url: String, source: DownloadMirrorSource): String {
+        var lastError: Exception? = null
+        for (candidate in MirrorUrlRewriter.candidates(url, source)) {
+            try {
+                return HttpUtil.getString(candidate)
+            } catch (e: Exception) {
+                lastError = e
+            }
+        }
+        throw lastError ?: IllegalStateException("所有下载源均失败: $url")
     }
 }
