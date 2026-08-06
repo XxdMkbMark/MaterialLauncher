@@ -17,6 +17,7 @@
 package cc.lanternmc.materiallauncher.core.download
 
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 import java.util.regex.Pattern
 import cc.lanternmc.materiallauncher.core.model.Artifact
 import cc.lanternmc.materiallauncher.core.model.Library
@@ -30,6 +31,11 @@ import cc.lanternmc.materiallauncher.core.util.Sha1
 import cc.lanternmc.materiallauncher.core.util.currentOs
 import cc.lanternmc.materiallauncher.core.util.is32Bit
 import cc.lanternmc.materiallauncher.core.util.isArm64
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 /**
  * 下载 Minecraft 依赖库，处理 rules / natives，返回 classpath。
@@ -47,33 +53,43 @@ class LibraryDownloader {
     ): List<String> {
         val libraryDir = File(gameDir, "libraries")
         File(nativesDir).mkdirs()
-        val classpath = mutableListOf<String>()
 
-        for (library in libraries) {
-            if (!libraryAllowed(library) || library.downloads == null) continue
+        // 并发下载：Minecraft 依赖库通常数十个，串行在慢网络下极慢。
+        // classpath 顺序由 index 收集、按原顺序重组，避免类加载顺序漂移。
+        val results = ConcurrentHashMap<Int, String>()
+        val semaphore = Semaphore(MAX_CONCURRENCY)
+        coroutineScope {
+            libraries.forEachIndexed { index, library ->
+                launch(Dispatchers.IO) {
+                    semaphore.withPermit {
+                        if (!libraryAllowed(library) || library.downloads == null) return@withPermit
 
-            val nativeArtifact = nativeArtifactForCurrentPlatform(library)
-            if (nativeArtifact.second) {
-                val artifact = nativeArtifact.first ?: continue
-                val jarPath = File(libraryDir, artifact.path).absolutePath
-                ensureArtifact(jarPath, artifact, source)
-                val excludes = mutableListOf("META-INF/")
-                library.extract?.exclude?.let { excludes.addAll(it) }
-                ArchiveExtractor.extractNativeJar(jarPath, nativesDir, excludes)
-                continue
+                        val nativeArtifact = nativeArtifactForCurrentPlatform(library)
+                        if (nativeArtifact.second) {
+                            val artifact = nativeArtifact.first ?: return@withPermit
+                            val jarPath = File(libraryDir, artifact.path).absolutePath
+                            ensureArtifact(jarPath, artifact, source)
+                            val excludes = mutableListOf("META-INF/")
+                            library.extract?.exclude?.let { excludes.addAll(it) }
+                            ArchiveExtractor.extractNativeJar(jarPath, nativesDir, excludes)
+                            return@withPermit
+                        }
+
+                        val artifact = library.downloads.artifact ?: return@withPermit
+                        // 路径穿越防护：来自版本 JSON 的相对路径必须合法
+                        if (!SafePath.isSafeRelativePath(artifact.path)) {
+                            Logger.warn("拒绝非法依赖路径: ${artifact.path}")
+                            return@withPermit
+                        }
+                        val targetPath = File(libraryDir, artifact.path).absolutePath
+                        ensureArtifact(targetPath, artifact, source)
+                        results[index] = targetPath
+                    }
+                }
             }
-
-            val artifact = library.downloads.artifact ?: continue
-            // 路径穿越防护：来自版本 JSON 的相对路径必须合法
-            if (!SafePath.isSafeRelativePath(artifact.path)) {
-                Logger.warn("拒绝非法依赖路径: ${artifact.path}")
-                continue
-            }
-            val targetPath = File(libraryDir, artifact.path).absolutePath
-            ensureArtifact(targetPath, artifact, source)
-            classpath.add(targetPath)
         }
-        return classpath
+        // 按原顺序重组 classpath（跳过被过滤的项）
+        return libraries.indices.mapNotNull { results[it] }
     }
 
     private suspend fun ensureArtifact(
@@ -107,6 +123,9 @@ class LibraryDownloader {
     companion object {
         /** 单个依赖库的最大下载尝试次数（含重试）。 */
         internal const val MAX_LIBRARY_ATTEMPTS = 3
+
+        /** 依赖库并发下载数。 */
+        private const val MAX_CONCURRENCY = 20
     }
 
     private fun nativeArtifactForCurrentPlatform(library: Library): Pair<Artifact?, Boolean> {
