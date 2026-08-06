@@ -612,8 +612,37 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     // ---------- 多实例管理 ----------
 
+    /**
+     * 实例列表 = 注册表 ∪ versions 目录扫描的并集。
+     *
+     * 兼容旧数据：versions 下已有但未注册过（旧版启动器下载 / 手动放入）的版本
+     * 文件夹会被自动合成为实例显示，可正常启动与删除。
+     */
     override suspend fun listInstances(): List<GameInstance> = withContext(Dispatchers.IO) {
-        instanceStore.load()
+        val registered = instanceStore.load()
+        val mcPath = configStore.load().minecraft.path
+        val versionsDir = File(mcPath, "versions")
+        val folders = versionsDir.listFiles()
+            ?.filter { it.isDirectory && File(it, "${it.name}.json").isFile }
+            ?: emptyList()
+        if (folders.isEmpty()) return@withContext registered
+
+        val registeredNames = registered.mapTo(HashSet()) { it.name }
+        val merged = registered.toMutableList()
+        for (dir in folders) {
+            if (dir.name in registeredNames) continue
+            // 未注册的版本文件夹：合成为 legacy 实例（id 带前缀，可删除）
+            merged.add(
+                GameInstance(
+                    id = "legacy-${dir.name}",
+                    name = dir.name,
+                    versionId = dir.name,
+                    gameDir = mcPath,
+                    maxMemory = "2048M",
+                ),
+            )
+        }
+        merged
     }
 
     override suspend fun createInstance(name: String, versionId: String): GameInstance =
@@ -644,9 +673,13 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     }
 
     override suspend fun deleteInstance(instanceId: String): Boolean = withContext(Dispatchers.IO) {
-        val instance = instanceStore.load().firstOrNull { it.id == instanceId }
+        // 从合并列表查找（覆盖 legacy 未注册实例）
+        val instance = listInstances().firstOrNull { it.id == instanceId }
             ?: return@withContext false
-        instanceStore.remove(instanceId)
+        // 仅删除注册表中存在的记录；legacy 实例本就没有记录，忽略
+        if (!instanceId.startsWith("legacy-")) {
+            instanceStore.remove(instanceId)
+        }
         // 删除实例对应的版本文件夹（versions/<name>），绝不删除 mcPath 根目录
         val instanceDir = File(File(instance.gameDir, "versions"), instance.name)
         runCatching { instanceDir.deleteRecursively() }

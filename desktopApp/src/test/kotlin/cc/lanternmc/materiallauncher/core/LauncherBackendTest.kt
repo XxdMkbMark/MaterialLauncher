@@ -248,4 +248,34 @@ class LauncherBackendTest {
             backend.listInstances().forEach { backend.deleteInstance(it.id) }
         }
     }
+
+    // ---- 旧版本文件夹自动并入实例列表 ----
+
+    @Test
+    fun `legacy version folder without registration appears in instances and is deletable`() = runBlocking {
+        val cfg = backend.configStore.load()
+        val mcPath = cfg.minecraft.path
+        val versionDir = File(mcPath, "versions")
+        versionDir.mkdirs()
+        val legacyDir = File(versionDir, "1.16.5")
+        try {
+            // 模拟旧版启动器下载的版本：只有文件夹 + json，没有实例注册
+            legacyDir.mkdirs()
+            File(legacyDir, "1.16.5.json").writeText("{}")
+            File(legacyDir, "1.16.5.jar").writeText("jar")
+
+            val instances = backend.listInstances()
+            val legacy = instances.firstOrNull { it.name == "1.16.5" }
+            assertTrue(legacy != null, "versions 下的旧版本文件夹应出现在实例列表")
+            assertEquals("legacy-1.16.5", legacy!!.id)
+
+            // legacy 实例可删除（只删自己的文件夹）
+            assertTrue(backend.deleteInstance(legacy.id))
+            assertFalse(legacyDir.exists())
+            assertTrue(File(mcPath).isDirectory)
+        } finally {
+            runCatching { legacyDir.deleteRecursively() }
+            backend.listInstances().forEach { backend.deleteInstance(it.id) }
+        }
+    }
 }
