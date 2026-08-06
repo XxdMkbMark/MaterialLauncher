@@ -117,3 +117,14 @@ data class LaunchRequest(
     /** 可选：正版账户的 id。提供时后端会按此精确定位账户并自动续期 token。 */
     val accountId: String = "",
 )
+
+/** 一个正在运行（或已退出）的游戏进程快照。 */
+@Serializable
+data class RunningGameInfo(
+    val pid: Int,
+    val gameDir: String = "",
+    val versionId: String = "",
+    val username: String = "",
+    val alive: Boolean = false,
+    val exitCode: Int? = null,
+)

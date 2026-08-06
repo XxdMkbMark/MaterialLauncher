@@ -26,6 +26,7 @@ import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.time.Duration
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import kotlin.coroutines.coroutineContext
@@ -41,15 +42,18 @@ object HttpUtil {
         .followRedirects(HttpClient.Redirect.NORMAL)
         .build()
 
-    suspend fun getString(url: String, timeoutSeconds: Long = 60): String = withContext(Dispatchers.IO) {
-        val request = HttpRequest.newBuilder(URI.create(url))
-            .timeout(Duration.ofSeconds(timeoutSeconds))
-            .GET()
-            .build()
-        val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-        check(response.statusCode() in 200..299) { "HTTP ${response.statusCode()}" }
-        response.body()
-    }
+    suspend fun getString(url: String, timeoutSeconds: Long = 60): String =
+        retryTransient {
+            withContext(Dispatchers.IO) {
+                val request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .GET()
+                    .build()
+                val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+                check(response.statusCode() in 200..299) { "HTTP ${response.statusCode()}" }
+                response.body()
+            }
+        }
 
     /**
      * 携带自定义请求头的 GET，返回原始状态码与响应体。
@@ -132,57 +136,92 @@ object HttpUtil {
         HttpResult(response.statusCode(), response.body())
     }
 
-    suspend fun getBytes(url: String, timeoutSeconds: Long = 120): ByteArray = withContext(Dispatchers.IO) {
-        val request = HttpRequest.newBuilder(URI.create(url))
-            .timeout(Duration.ofSeconds(timeoutSeconds))
-            .GET()
-            .build()
-        val response = client.send(request, HttpResponse.BodyHandlers.ofByteArray())
-        check(response.statusCode() in 200..299) { "HTTP ${response.statusCode()}" }
-        response.body()
-    }
+    suspend fun getBytes(url: String, timeoutSeconds: Long = 120): ByteArray =
+        retryTransient {
+            withContext(Dispatchers.IO) {
+                val request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(timeoutSeconds))
+                    .GET()
+                    .build()
+                val response = client.send(request, HttpResponse.BodyHandlers.ofByteArray())
+                check(response.statusCode() in 200..299) { "HTTP ${response.statusCode()}" }
+                response.body()
+            }
+        }
 
     /**
      * 下载到临时文件后原子重命名，下载过程中以 ≤100ms 频率回调进度。
+     * 网络抖动（连接失败/超时）时自动重试，最多 [MAX_RETRIES] 次。
      */
     suspend fun downloadFile(
         url: String,
         dest: String,
         onProgress: (downloaded: Long, total: Long) -> Unit,
-    ): Unit = withContext(Dispatchers.IO) {
-        val tmp = Path.of("$dest.tmp")
-        try {
-            val request = HttpRequest.newBuilder(URI.create(url))
-                .timeout(Duration.ofSeconds(120))
-                .GET()
-                .build()
-            val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
-            check(response.statusCode() in 200..299) { "HTTP ${response.statusCode()}" }
-            val total = response.headers().firstValueAsLong("Content-Length").orElse(-1L)
-            Files.createDirectories(tmp.parent)
-            var downloaded = 0L
-            var lastReport = System.currentTimeMillis()
-            response.body().use { input ->
-                Files.newOutputStream(tmp).use { output ->
-                    val buffer = ByteArray(64 * 1024)
-                    while (true) {
-                        coroutineContext.ensureActive()
-                        val read = input.read(buffer)
-                        if (read < 0) break
-                        output.write(buffer, 0, read)
-                        downloaded += read
-                        val now = System.currentTimeMillis()
-                        if (now - lastReport >= 100) {
-                            lastReport = now
-                            onProgress(downloaded, total)
+    ): Unit = retryTransient {
+        withContext(Dispatchers.IO) {
+            val tmp = Path.of("$dest.tmp")
+            try {
+                val request = HttpRequest.newBuilder(URI.create(url))
+                    .timeout(Duration.ofSeconds(120))
+                    .GET()
+                    .build()
+                val response = client.send(request, HttpResponse.BodyHandlers.ofInputStream())
+                check(response.statusCode() in 200..299) { "HTTP ${response.statusCode()}" }
+                val total = response.headers().firstValueAsLong("Content-Length").orElse(-1L)
+                Files.createDirectories(tmp.parent)
+                var downloaded = 0L
+                var lastReport = System.currentTimeMillis()
+                response.body().use { input ->
+                    Files.newOutputStream(tmp).use { output ->
+                        val buffer = ByteArray(64 * 1024)
+                        while (true) {
+                            coroutineContext.ensureActive()
+                            val read = input.read(buffer)
+                            if (read < 0) break
+                            output.write(buffer, 0, read)
+                            downloaded += read
+                            val now = System.currentTimeMillis()
+                            if (now - lastReport >= 100) {
+                                lastReport = now
+                                onProgress(downloaded, total)
+                            }
                         }
                     }
                 }
+                onProgress(downloaded, total)
+                Files.move(tmp, Path.of(dest), StandardCopyOption.REPLACE_EXISTING)
+            } finally {
+                Files.deleteIfExists(tmp)
             }
-            onProgress(downloaded, total)
-            Files.move(tmp, Path.of(dest), StandardCopyOption.REPLACE_EXISTING)
-        } finally {
-            Files.deleteIfExists(tmp)
         }
+    }
+
+    /** 临时性网络异常（连接失败/超时/IO 错误）时的最大重试次数。 */
+    private const val MAX_RETRIES = 3
+
+    /**
+     * 仅在抛出网络层异常时重试（指数退避：500ms/1s/2s），
+     * 非 2xx 状态码由调用方自行 check，不在此重试。
+     */
+    private suspend fun <T> retryTransient(block: suspend () -> T): T {
+        var attempt = 0
+        while (true) {
+            try {
+                return block()
+            } catch (e: Exception) {
+                val retryable = e !is IllegalArgumentException &&
+                    e !is IllegalStateException &&
+                    !isHttpStatusError(e)
+                if (!retryable || attempt >= MAX_RETRIES) throw e
+                attempt++
+                Logger.warn("网络请求失败，第 $attempt 次重试: ${e.message}")
+                delay(500L * attempt)
+            }
+        }
+    }
+
+    private fun isHttpStatusError(e: Exception): Boolean {
+        val msg = e.message ?: return false
+        return msg.startsWith("HTTP ")
     }
 }

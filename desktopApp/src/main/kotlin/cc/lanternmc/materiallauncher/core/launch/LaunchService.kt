@@ -44,6 +44,7 @@ class LaunchService(
     private val scope: CoroutineScope,
     private val assetDownloader: AssetDownloader,
     private val libraryDownloader: LibraryDownloader,
+    private val gameProcessManager: GameProcessManager = GameProcessManager(),
 ) {
     private val json = Json { ignoreUnknownKeys = true }
 
@@ -172,6 +173,13 @@ class LaunchService(
 
         val pid = process.pid().toInt()
         Logger.info("Minecraft 启动成功, pid=$pid")
+        gameProcessManager.register(process, gameDir, versionId, username)
+
+        // 崩溃诊断：游戏 stdout/stderr 落盘到 <gameDir>/logs/launcher-<pid>.log，便于排查。
+        val logsDir = File(gameDir, "logs")
+        logsDir.mkdirs()
+        val gameLogFile = File(logsDir, "launcher-$pid.log")
+        val logWriter = gameLogFile.bufferedWriter(Charsets.UTF_8)
 
         val ready = AtomicBoolean(false)
         fun markReady() {
@@ -181,23 +189,31 @@ class LaunchService(
         }
 
         scope.launch(Dispatchers.IO) {
-            process.inputStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
-                Logger.info("[MC] $line")
-                if (line.contains("Setting user:")
-                    || line.contains("Launched game")
-                    || line.contains("Backend library:")
-                    || line.contains("Created:")
-                ) {
-                    markReady()
+            runCatching {
+                process.inputStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
+                    Logger.info("[MC] $line")
+                    runCatching { logWriter.write(line); logWriter.newLine(); logWriter.flush() }
+                    if (line.contains("Setting user:")
+                        || line.contains("Launched game")
+                        || line.contains("Backend library:")
+                        || line.contains("Created:")
+                    ) {
+                        markReady()
+                    }
                 }
             }
+            runCatching { logWriter.close() }
             Logger.info("[MC] stdout 已关闭")
         }
 
         scope.launch(Dispatchers.IO) {
-            process.errorStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
-                Logger.warn("[MC-ERR] $line")
+            runCatching {
+                process.errorStream.bufferedReader(Charsets.UTF_8).forEachLine { line ->
+                    Logger.warn("[MC-ERR] $line")
+                    runCatching { logWriter.write("[ERR] $line"); logWriter.newLine(); logWriter.flush() }
+                }
             }
+            runCatching { logWriter.close() }
         }
 
         // 兜底：若 stdout 里没有可识别的就绪关键字，进程存活一段时间即视为已启动。
@@ -207,14 +223,16 @@ class LaunchService(
         }
 
         // 通过 Process.onExit() 非阻塞等待游戏进程退出，避免阻塞线程造成线程匮乏。
-        process.onExit().whenComplete { _, _ ->
-            val code = runCatching { process.exitValue() }.getOrDefault(-1)
+        // 退出码一并推送给前端（0=正常退出，非 0=异常/崩溃）。
+        process.onExit().whenComplete { p, _ ->
+            val code = runCatching { p.exitValue() }.getOrDefault(-1)
             if (code != 0) {
-                Logger.error("Minecraft 游戏进程非正常退出, exit=$code")
+                Logger.error("Minecraft 游戏进程非正常退出, exit=$code（日志: ${gameLogFile.absolutePath}）")
             } else {
                 Logger.info("Minecraft 游戏进程已结束")
             }
-            emit(LauncherEvent.GameExited(pid))
+            runCatching { logWriter.close() }
+            emit(LauncherEvent.GameExited(pid, exitCode = code))
         }
 
         pid

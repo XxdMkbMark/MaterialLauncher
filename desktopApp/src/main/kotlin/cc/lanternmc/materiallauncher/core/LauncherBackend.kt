@@ -43,6 +43,7 @@ import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.api.LauncherEventBus
 import cc.lanternmc.materiallauncher.api.LaunchRequest
 import cc.lanternmc.materiallauncher.api.MinecraftVersionEntry
+import cc.lanternmc.materiallauncher.api.RunningGameInfo
 import cc.lanternmc.materiallauncher.core.auth.MicrosoftAuthService
 import cc.lanternmc.materiallauncher.core.config.AppDataPathsResolver
 import cc.lanternmc.materiallauncher.core.config.AuthStore
@@ -53,6 +54,7 @@ import cc.lanternmc.materiallauncher.core.download.LibraryDownloader
 import cc.lanternmc.materiallauncher.core.download.MinecraftVersionService
 import cc.lanternmc.materiallauncher.core.java.JavaFinder
 import cc.lanternmc.materiallauncher.core.java.JavaIndexer
+import cc.lanternmc.materiallauncher.core.launch.GameProcessManager
 import cc.lanternmc.materiallauncher.core.launch.LauncherException
 import cc.lanternmc.materiallauncher.core.launch.LaunchService
 import cc.lanternmc.materiallauncher.core.model.VersionJson
@@ -77,7 +79,8 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
     internal val authStore = AuthStore(File(paths.directory, "auth.toml").absolutePath)
     private val assetDownloader = AssetDownloader()
     private val libraryDownloader = LibraryDownloader()
-    private val launchService = LaunchService(scope, assetDownloader, libraryDownloader)
+    private val gameProcessManager = GameProcessManager()
+    private val launchService = LaunchService(scope, assetDownloader, libraryDownloader, gameProcessManager)
     private val javaIndexer = JavaIndexer(paths.javaIndex, scope) { event -> _events.tryEmit(event) }
     private val downloadId = AtomicLong(0)
     private var microsoftLoginJob: Job? = null
@@ -398,6 +401,18 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
         }.minByOrNull { it.first }?.second?.path
         return best ?: preferred
     }
+
+    // ---------- 游戏进程管理 ----------
+
+    override fun listRunningGames(): List<RunningGameInfo> = gameProcessManager.list()
+
+    override fun stopGame(pid: Int): Boolean = gameProcessManager.stop(pid)
+
+    override fun killGame(pid: Int): Boolean = gameProcessManager.kill(pid)
+
+    // ---------- 内存建议 ----------
+
+    override fun suggestMaxMemoryMb(): Int = gameProcessManager.suggestMaxMemoryMb()
 
     // ---------- 账户 ----------
 

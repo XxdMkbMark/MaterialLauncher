@@ -52,6 +52,14 @@ interface LauncherApi {
     suspend fun launchMinecraft(request: LaunchRequest): Int
     suspend fun resolveLaunchJava(gameDir: String, versionId: String, preferred: String): String
 
+    // ---- 游戏进程管理 ----
+    fun listRunningGames(): List<RunningGameInfo>
+    fun stopGame(pid: Int): Boolean
+    fun killGame(pid: Int): Boolean
+
+    // ---- 内存建议 ----
+    fun suggestMaxMemoryMb(): Int
+
     // ---- 账户 ----
     suspend fun getAccounts(): List<Account>
     suspend fun addOfflineAccount(username: String): Account

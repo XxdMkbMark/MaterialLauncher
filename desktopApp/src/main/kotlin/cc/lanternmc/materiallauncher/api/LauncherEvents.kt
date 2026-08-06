@@ -21,7 +21,9 @@ package cc.lanternmc.materiallauncher.api
  */
 sealed interface LauncherEvent {
     data class GameReady(val pid: Int) : LauncherEvent
-    data class GameExited(val pid: Int) : LauncherEvent
+
+    /** 游戏进程退出。[exitCode] 非 0 表示异常退出/崩溃；null 表示未知。 */
+    data class GameExited(val pid: Int, val exitCode: Int? = null) : LauncherEvent
 
     data class DownloadProgressEvent(val progress: DownloadProgress) : LauncherEvent
 
