@@ -86,15 +86,14 @@ fun SampleHome() {
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Box(
-                modifier = Modifier.size(400.dp, 200.dp).background(lightScheme.primaryContainer,
-                shape = RoundedCornerShape(12.dp)),
+                modifier = Modifier.size(400.dp, 200.dp).background(lightScheme.secondaryContainer, shape = RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text("UNDER CONSTRUCTION", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text("UNDER CONSTRUCTION", Modifier.padding(16.dp), fontSize = 20.sp)
                     Button(onClick = { showDialog = true }) {
                         Text("这是什么?")
                     }
@@ -145,7 +144,7 @@ fun Home(modifier: Modifier = Modifier) {
         it.showInNavigationRail
     }
 
-    // ★ 如果你有抽屉，可以加上这个 ★
+    // 抽屉状态管理
     // val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // val coroutineScope = rememberCoroutineScope()
 
@@ -157,24 +156,21 @@ fun Home(modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .fillMaxHeight()
                         .width(72.dp),
-                    containerColor = MaterialTheme.colorScheme.surface,  // 可选：背景色
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceBetween  // ★ 改为 SpaceBetween
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // ========== 顶部区域：菜单 + FAB ==========
                         Column(
                             modifier = Modifier.padding(top = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            // ★ 按钮1：菜单按钮（展开抽屉用）★
                             NavigationRailItem(
                                 selected = false,
                                 onClick = {
                                     // coroutineScope.launch { drawerState.open() }
-                                    // 如果暂时没有抽屉，可以先留空或做其他操作
                                 },
                                 icon = {
                                     Icon(
@@ -184,7 +180,6 @@ fun Home(modifier: Modifier = Modifier) {
                                 },
                             )
 
-                            // ★ 按钮2：主要操作 FAB ★
                             FloatingActionButton(
                                 onClick = {
                                     navController.navigate(Destination.USERS.route) {
@@ -197,14 +192,13 @@ fun Home(modifier: Modifier = Modifier) {
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Person,  // 或 Edit, Create 等
+                                    imageVector = Icons.Rounded.Person,
                                     contentDescription = "新建",
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
                         }
 
-                        // ========== 中间区域：导航项 ==========
                         Column(
                             modifier = Modifier.weight(1f).padding(20.dp),  // 占据剩余空间
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -258,8 +252,6 @@ fun Home(modifier: Modifier = Modifier) {
 
                         }
 
-                        // ========== 底部区域（可选）==========
-                        // 如果需要在底部放其他按钮，可以在这里加
                     }
                 }
 
