@@ -81,6 +81,7 @@ class AssetDownloader {
                         val url = "$ASSET_BASE_URL/$hashPrefix/${asset.hash}"
                         // 失败自动重下：最多尝试 3 次，且按镜像策略回退
                         var attempts = 0
+                        var lastError: String = ""
                         while (attempts < MAX_ASSET_ATTEMPTS) {
                             attempts++
                             try {
@@ -88,16 +89,18 @@ class AssetDownloader {
                                 if (Sha1.isFileValid(targetFile.absolutePath, asset.hash, asset.size)) {
                                     return@withPermit
                                 }
+                                lastError = "SHA-1 校验不匹配"
                             } catch (e: Exception) {
                                 // 协程取消必须传播，不能当作下载失败重试
                                 if (e is kotlinx.coroutines.CancellationException) throw e
+                                lastError = "${e.javaClass.simpleName}: ${e.message}"
                                 if (attempts < MAX_ASSET_ATTEMPTS) {
                                     Logger.warn("Asset 下载失败（第 $attempts 次，将重试）: ${e.message}")
                                 }
                             }
                         }
                         failures.incrementAndGet()
-                        Logger.warn("下载 Asset 失败（已重试 $MAX_ASSET_ATTEMPTS 次）: $url")
+                        Logger.warn("下载 Asset 失败（已重试 $MAX_ASSET_ATTEMPTS 次）: $url  原因: $lastError")
                     }
                 }
             }
