@@ -109,11 +109,11 @@ fun SampleHome() {
 }
 
 enum class Destination (val route: String, val label: String, val icon: ImageVector,val showInNavigationRail: Boolean = true) {
-    HOME("home", "主页", Icons.Rounded.Home),
+    HOME("home", "主页", Icons.Rounded.Home, false),
     DOWNLOAD("download", "下载", Icons.Rounded.Download),
     VERSIONS("versions","版本", Icons.Rounded.Checklist),
     SETTINGS("settings", "设置", Icons.Rounded.Settings),
-    USERS("users", "用户档案", Icons.Rounded.ManageAccounts, false),
+    USERS("users", "用户档案", Icons.Rounded.ManageAccounts),
 }
 
 @Composable
@@ -175,14 +175,14 @@ fun Home(modifier: Modifier = Modifier) {
                                 icon = {
                                     Icon(
                                         imageVector = Icons.Rounded.Menu,
-                                        contentDescription = "菜单",
+                                        contentDescription = "展开",
                                     )
                                 },
                             )
 
                             FloatingActionButton(
                                 onClick = {
-                                    navController.navigate(Destination.USERS.route) {
+                                    navController.navigate(Destination.HOME.route) {
                                         launchSingleTop = true
                                     }
                                 },
@@ -192,8 +192,8 @@ fun Home(modifier: Modifier = Modifier) {
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Person,
-                                    contentDescription = "新建",
+                                    imageVector = Icons.Rounded.Home,
+                                    contentDescription = "主页",
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
