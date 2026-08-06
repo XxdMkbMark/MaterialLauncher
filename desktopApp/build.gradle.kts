@@ -46,6 +46,10 @@ compose.desktop {
             targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
             packageName = "cc.lanternmc.materiallauncher"
             packageVersion = "1.0.0"
+
+            // jlink 精简运行时默认不会自动包含 java.net.http 模块，
+            // 缺它会导致打包版打开下载页时 NoClassDefFoundError 崩溃。
+            modules("java.net.http", "java.management", "java.sql")
         }
     }
 }
