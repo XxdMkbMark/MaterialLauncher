@@ -22,23 +22,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -54,8 +48,10 @@ import cc.lanternmc.materiallauncher.api.GameInstance
 import cc.lanternmc.materiallauncher.api.LauncherApi
 
 /**
- * 多实例管理页：列出所有实例，支持新建 / 删除 / 启动。
- * 每个实例拥有独立游戏目录与锁定的 MC 版本。
+ * 实例管理页：列出所有已下载的命名实例，支持启动 / 删除。
+ *
+ * 实例与版本文件夹合一：在下载页下载 MC 时输入名称即创建实例
+ * （默认用版本号命名），这里统一管理。
  */
 @Composable
 fun InstancesPage(
@@ -64,7 +60,6 @@ fun InstancesPage(
     onMessage: (String) -> Unit,
 ) {
     var instances by remember { mutableStateOf<List<GameInstance>>(emptyList()) }
-    var showCreate by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
     fun refresh() {
@@ -78,15 +73,17 @@ fun InstancesPage(
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             Text("游戏实例", style = MaterialTheme.typography.headlineMedium)
-            Button(onClick = { showCreate = true }) {
-                Icon(Icons.Default.Add, contentDescription = null)
-                Text("新建实例")
-            }
         }
+
+        Text(
+            "实例与版本文件夹合一：在「下载」页下载 Minecraft 时输入名称（默认版本号）即创建实例，每个实例拥有独立存档与设置。",
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            style = MaterialTheme.typography.bodySmall,
+        )
 
         if (instances.isEmpty()) {
             Text(
-                "还没有实例。点击「新建实例」创建一个独立游戏环境（每个实例有独立存档与设置）。",
+                "还没有实例。去「下载」页选择一个版本下载，输入名称即可创建。",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -136,50 +133,5 @@ fun InstancesPage(
                 }
             }
         }
-    }
-
-    if (showCreate) {
-        var name by remember { mutableStateOf("") }
-        var version by remember { mutableStateOf("") }
-        AlertDialog(
-            onDismissRequest = { showCreate = false },
-            title = { Text("新建实例") },
-            text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = name,
-                        onValueChange = { name = it },
-                        label = { Text("实例名称（如：生存服）") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                    OutlinedTextField(
-                        value = version,
-                        onValueChange = { version = it },
-                        label = { Text("MC 版本（如：1.20.1）") },
-                        modifier = Modifier.fillMaxWidth(),
-                        singleLine = true,
-                    )
-                }
-            },
-            confirmButton = {
-                Button(onClick = {
-                    if (name.isBlank() || version.isBlank()) {
-                        onMessage("名称和版本不能为空")
-                        return@Button
-                    }
-                    scope.launch {
-                        runCatching { api.createInstance(name.trim(), version.trim()) }
-                            .onSuccess {
-                                showCreate = false
-                                refresh()
-                                onMessage("已创建实例 ${it.name}")
-                            }
-                            .onFailure { onMessage("创建实例失败: ${it.message}") }
-                    }
-                }) { Text("创建") }
-            },
-            dismissButton = { TextButton(onClick = { showCreate = false }) { Text("取消") } },
-        )
     }
 }

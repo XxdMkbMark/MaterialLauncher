@@ -198,4 +198,54 @@ class LauncherBackendTest {
         assertEquals(account.id, cfg.accountId)
         assertEquals("BretNew", cfg.username)
     }
+
+    // ---- 实例 = 命名版本文件夹（统一模型） ----
+
+    @Test
+    fun `createInstance creates named folder under versions and rejects duplicates`() {
+        runBlocking {
+            val cfg = backend.configStore.load()
+            val mcPath = cfg.minecraft.path
+            val versionDir = File(mcPath, "versions")
+            versionDir.mkdirs()
+            try {
+                val inst = backend.createInstance("我的生存服", "1.20.1")
+                assertEquals("我的生存服", inst.name)
+                assertEquals(mcPath, inst.gameDir)
+                assertTrue(File(versionDir, "我的生存服").isDirectory)
+
+                // 重名应被拒绝
+                assertFailsWith<LauncherException> {
+                    backend.createInstance("我的生存服", "1.21")
+                }
+            } finally {
+                // 清理：删实例 + 目录（不删 mcPath 本身）
+                backend.listInstances().forEach { backend.deleteInstance(it.id) }
+                File(versionDir, "我的生存服").deleteRecursively()
+            }
+        }
+    }
+
+    @Test
+    fun `deleteInstance removes versions folder but keeps gameDir`() = runBlocking {
+        val cfg = backend.configStore.load()
+        val mcPath = cfg.minecraft.path
+        val versionDir = File(mcPath, "versions")
+        versionDir.mkdirs()
+        try {
+            val inst = backend.createInstance("待删实例", "1.20.1")
+            val instanceDir = File(versionDir, "待删实例")
+            assertTrue(instanceDir.isDirectory)
+            File(instanceDir, "saves").mkdirs()
+
+            assertTrue(backend.deleteInstance(inst.id))
+            // 实例目录被删除，但 mcPath 根目录仍在
+            assertFalse(instanceDir.exists())
+            assertTrue(File(mcPath).isDirectory)
+            // 实例记录已移除
+            assertTrue(backend.listInstances().none { it.id == inst.id })
+        } finally {
+            backend.listInstances().forEach { backend.deleteInstance(it.id) }
+        }
+    }
 }

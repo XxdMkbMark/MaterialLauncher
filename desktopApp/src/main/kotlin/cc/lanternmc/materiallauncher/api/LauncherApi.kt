@@ -48,7 +48,12 @@ interface LauncherApi {
     suspend fun getJavaVersions(): List<JavaReleaseInfo>
 
     // ---- 下载（异步，进度通过事件推送） ----
-    fun startMinecraftDownload(versionId: String)
+    /**
+     * 下载并创建命名实例。
+     * @param versionId MC 版本 ID
+     * @param folderName 实例/文件夹名称（默认 = 版本 ID）；不得与已存在的版本文件夹重名
+     */
+    fun startMinecraftDownload(versionId: String, folderName: String = "")
     fun startJavaDownload(javaVersionId: String)
 
     /** 取消进行中的下载任务，taskKey 形如 "minecraft:<id>" / "java:<id>"。 */

@@ -201,8 +201,8 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     // ---------- 下载 ----------
 
-    override fun startMinecraftDownload(versionId: String) {
-        startDownload("minecraft:$versionId") { downloadMinecraft(versionId) }
+    override fun startMinecraftDownload(versionId: String, folderName: String) {
+        startDownload("minecraft:$versionId") { downloadMinecraft(versionId, folderName) }
     }
 
     override fun startJavaDownload(javaVersionId: String) {
@@ -231,8 +231,10 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     private fun nextDownloadId(): String = "dl-${downloadId.incrementAndGet()}"
 
-    private suspend fun downloadMinecraft(versionId: String) {
+    private suspend fun downloadMinecraft(versionId: String, folderNameInput: String) {
         val id = nextDownloadId()
+        // 实例名 = 用户输入，默认版本 ID；清洗非法文件名字符
+        val folderName = sanitizeFolderName(folderNameInput.ifBlank { versionId })
         fun emitProgress(
             status: String,
             downloaded: Long = 0,
@@ -243,7 +245,7 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             _events.tryEmit(
                 LauncherEvent.DownloadProgressEvent(
                     DownloadProgress(
-                        id = id, type = "minecraft", item = versionId,
+                        id = id, type = "minecraft", item = folderName,
                         status = status, downloaded = downloaded, total = total, error = error,
                         speedBytesPerSec = speedBytesPerSec,
                     ),
@@ -256,11 +258,16 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
         val mcPath = config.minecraft.path
         val source = DownloadMirrorSource.fromConfig(config.mirrorSource)
         try {
+            val versionDir = File(mcPath, "versions/$folderName")
+            // 重名检查：已存在同名文件夹（已下载过该实例）则拒绝
+            if (versionDir.isDirectory) {
+                throw LauncherException("已存在同名文件夹「$folderName」，请更换名称")
+            }
+
             val manifest = MinecraftVersionService.fetchVersions(source)
             val entry = manifest.firstOrNull { it.id == versionId }
                 ?: throw LauncherException("未找到版本 $versionId")
 
-            val versionDir = File(mcPath, "versions/$versionId")
             versionDir.mkdirs()
             val rateMeter = RateMeter()
 
@@ -268,13 +275,13 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             // 版本 JSON 也按镜像策略回退
             val versionJsonBytes = downloadWithMirrorFallback(entry.url, source)
             val versionInfo = json.decodeFromString<VersionJson>(String(versionJsonBytes, Charsets.UTF_8))
-            File(versionDir, "$versionId.json").writeBytes(versionJsonBytes)
+            File(versionDir, "$folderName.json").writeBytes(versionJsonBytes)
 
             val client = versionInfo.downloads?.client
             if (client == null || client.url.isBlank()) {
                 throw LauncherException("版本 $versionId 缺少 client 下载信息")
             }
-            val clientJar = File(versionDir, "$versionId.jar")
+            val clientJar = File(versionDir, "$folderName.jar")
             emitProgress("downloading", 0, client.size)
             // client jar 按镜像策略回退 + 校验失败自动重下
             downloadClientWithRetry(client, clientJar.absolutePath, source) { downloaded, total ->
@@ -289,11 +296,31 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
                 clientJar.delete()
                 throw LauncherException("版本 $versionId 的 client 文件未通过 SHA-1/大小校验")
             }
+
+            // 下载成功 → 注册为命名实例（实例与版本文件夹合一）
+            instanceStore.add(
+                GameInstance(
+                    id = UUID.randomUUID().toString(),
+                    name = folderName,
+                    versionId = versionId,
+                    gameDir = mcPath,
+                    maxMemory = "2048M",
+                    createdAt = OffsetDateTime.now().toString(),
+                ),
+            )
+            Logger.info("实例「$folderName」创建完成（版本 $versionId）")
             emitProgress("done", client.size, client.size)
         } catch (e: Exception) {
             Logger.error("Minecraft 下载失败: ${e.message}")
             emitProgress("error", error = e.message ?: "unknown error")
         }
+    }
+
+    /** 清洗为合法的版本文件夹名：去首尾空白、替换非法字符、禁止空名。 */
+    private fun sanitizeFolderName(raw: String): String {
+        val trimmed = raw.trim()
+        val cleaned = trimmed.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        return cleaned.ifBlank { "instance" }
     }
 
     /** 下载 client jar：镜像回退 + 校验失败自动重下（最多 3 次）。 */
@@ -591,13 +618,24 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
 
     override suspend fun createInstance(name: String, versionId: String): GameInstance =
         withContext(Dispatchers.IO) {
-            val instance = InstanceStore.newInstance(
-                name = name,
+            val mcPath = configStore.load().minecraft.path
+            val folderName = sanitizeFolderName(name)
+            // 重名检查：与已有版本文件夹重名则拒绝
+            val target = File(mcPath, "versions/$folderName")
+            if (target.isDirectory) {
+                throw LauncherException("已存在同名文件夹「$folderName」，请更换名称")
+            }
+            target.mkdirs()
+            val instance = GameInstance(
+                id = UUID.randomUUID().toString(),
+                name = folderName,
                 versionId = versionId,
-                baseDir = paths.directory,
+                gameDir = mcPath,
+                maxMemory = "2048M",
+                createdAt = OffsetDateTime.now().toString(),
             )
             instanceStore.add(instance)
-            Logger.info("已创建实例: ${instance.name} (${instance.id.take(8)}), 版本 $versionId")
+            Logger.info("已创建实例: ${instance.name}, 版本 $versionId")
             instance
         }
 
@@ -609,8 +647,9 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
         val instance = instanceStore.load().firstOrNull { it.id == instanceId }
             ?: return@withContext false
         instanceStore.remove(instanceId)
-        // 同时删除实例独立游戏目录（含存档）
-        runCatching { File(instance.gameDir).deleteRecursively() }
+        // 删除实例对应的版本文件夹（versions/<name>），绝不删除 mcPath 根目录
+        val instanceDir = File(File(instance.gameDir, "versions"), instance.name)
+        runCatching { instanceDir.deleteRecursively() }
         Logger.info("已删除实例: ${instance.name}")
         true
     }
@@ -631,27 +670,27 @@ class LauncherBackend : LauncherApi, LauncherEventBus {
             LaunchRequest(
                 javaPath = "",
                 gameDir = instance.gameDir,
-                versionId = instance.versionId,
+                versionId = instance.name, // 版本文件夹名 = 实例名
                 username = username,
                 maxMemory = instance.maxMemory,
-                isolateVersion = false,
+                isolateVersion = true,
                 accessToken = accessToken,
                 uuid = uuid,
                 userType = userType,
             ),
         )
         val javaPath = instance.javaPath.ifBlank {
-            resolveLaunchJava(instance.gameDir, instance.versionId, javasFirstPath())
+            resolveLaunchJava(instance.gameDir, instance.name, javasFirstPath())
         }
         val extraJvmArgs = splitArgs(instance.jvmArgs)
         val extraGameArgs = splitArgs(config.gameArgs)
         val pid = launchService.fullLaunch(
             javaPath = javaPath,
             gameDir = instance.gameDir,
-            versionId = instance.versionId,
+            versionId = instance.name, // 版本文件夹名 = 实例名
             username = username,
             maxMem = instance.maxMemory,
-            isolateVersion = false,
+            isolateVersion = true,
             accessToken = token,
             uuid = effectiveUuid,
             userType = userType,

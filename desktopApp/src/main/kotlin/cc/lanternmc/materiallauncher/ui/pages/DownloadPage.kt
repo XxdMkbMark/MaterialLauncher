@@ -32,12 +32,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -73,6 +75,8 @@ fun DownloadPage(
     var config by remember { mutableStateOf<DownloadConfig?>(null) }
     val downloads = remember { mutableStateMapOf<String, DownloadProgress>() }
     var loading by remember { mutableStateOf(true) }
+    // MC 下载命名对话框状态：null = 关闭；否则记录待下载的版本
+    var pendingMcDownload by remember { mutableStateOf<MinecraftVersionEntry?>(null) }
 
     LaunchedEffect(Unit) {
         try {
@@ -154,7 +158,7 @@ fun DownloadPage(
                         prog = prog,
                         done = done,
                         err = err,
-                        onClick = { if (!busy) api.startMinecraftDownload(version.id) },
+                        onClick = { if (!busy) pendingMcDownload = version },
                     )
                 }
             }
@@ -179,6 +183,43 @@ fun DownloadPage(
                 }
             }
         }
+    }
+
+    // MC 下载命名对话框：确认实例名称后开始下载
+    pendingMcDownload?.let { version ->
+        var name by remember { mutableStateOf(version.id) }
+        AlertDialog(
+            onDismissRequest = { pendingMcDownload = null },
+            title = { Text("下载 ${version.id}") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        "为这个游戏环境起个名字（实例名/文件夹名）。默认使用版本号。",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        label = { Text("实例名称") },
+                    )
+                    Text(
+                        "已存在同名文件夹时会被拒绝。",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            },
+            confirmButton = {
+                Button(onClick = {
+                    pendingMcDownload = null
+                    api.startMinecraftDownload(version.id, name.trim())
+                }) { Text("开始下载") }
+            },
+            dismissButton = { TextButton(onClick = { pendingMcDownload = null }) { Text("取消") } },
+        )
     }
 }
 
@@ -269,6 +310,14 @@ private fun DownloadRow(
             err -> Icon(Icons.Default.Close, contentDescription = null, tint = MaterialTheme.colorScheme.error)
             else -> Icon(Icons.Default.Download, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
+    }
+    if (err && !prog?.error.isNullOrBlank()) {
+        Text(
+            text = prog?.error.orEmpty(),
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.error,
+            modifier = Modifier.padding(horizontal = 8.dp),
+        )
     }
 }
 
