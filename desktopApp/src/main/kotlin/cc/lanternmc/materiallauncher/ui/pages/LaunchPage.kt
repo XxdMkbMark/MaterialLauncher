@@ -105,42 +105,24 @@ fun LaunchPage(
             status = "请先选择 Java / MC 路径 / 版本"
         } else {
             status = "启动中..."
-            scope.launch {
-                try {
-                    val javaPath = api.resolveLaunchJava(
-                        gameDir = config?.minecraft?.path.orEmpty(),
-                        versionId = selectedMcVersion,
-                        preferred = selectedJava,
-                    )
-                    val javaLabel = javas.firstOrNull { it.path == javaPath }?.version
-                        ?.let { "Java $it" }
-                        ?: javaPath
-                    if (javaPath != selectedJava) {
-                        status = "已自动切换 Java: $javaLabel"
-                        selectedJava = javaPath
-                        api.logInfo("自动切换 Java: ${selectedJava} -> $javaPath ($javaLabel)")
-                    }
-                    val pid = api.launchMinecraft(
-                        LaunchRequest(
-                            javaPath = javaPath,
-                            gameDir = config?.minecraft?.path.orEmpty(),
-                            versionId = selectedMcVersion,
-                            username = selectedAccount?.username
-                                ?: config?.username.orEmpty().ifBlank { "TestUser" },
-                            accessToken = selectedAccount?.accessToken ?: "0",
-                            uuid = selectedAccount?.uuid
-                                ?: "00000000-0000-0000-0000-000000000000",
-                            userType = selectedAccount?.userType ?: "legacy",
-                            maxMemory = "${memValue}M",
-                            isolateVersion = true,
-                        ),
-                    )
-                    status = "已启动, PID=$pid ($javaLabel)"
-                } catch (e: Exception) {
-                    status = "启动失败: ${e.message}"
-                    api.logError("启动失败: $e")
-                }
-            }
+            // 异步启动：完整流程（下载/校验/拉起）在启动器自己的协程中执行，
+            // 不会因 UI 组合离开而被取消。
+            api.launchMinecraftAsync(
+                LaunchRequest(
+                    javaPath = selectedJava,
+                    gameDir = config?.minecraft?.path.orEmpty(),
+                    versionId = selectedMcVersion,
+                    username = selectedAccount?.username
+                        ?: config?.username.orEmpty().ifBlank { "TestUser" },
+                    accessToken = selectedAccount?.accessToken ?: "0",
+                    uuid = selectedAccount?.uuid
+                        ?: "00000000-0000-0000-0000-000000000000",
+                    userType = selectedAccount?.userType ?: "legacy",
+                    maxMemory = "${memValue}M",
+                    isolateVersion = true,
+                ),
+            )
+            status = "启动中...（后台执行，日志见「日志」页）"
         }
     }
 

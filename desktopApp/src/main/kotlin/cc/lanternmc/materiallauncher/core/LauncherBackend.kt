@@ -151,6 +151,21 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
         configStore.launcherJavaDir()
     }
 
+    override fun getDataDirectory(): String = paths.directory
+
+    override fun setDataDirectory(dir: String): Boolean {
+        val trimmed = dir.trim()
+        if (trimmed.isBlank()) return false
+        // 目录穿越防护：必须是绝对路径且不含非法字符
+        val ok = AppDataPathsResolver.writeDataDirOverride(trimmed)
+        if (ok) {
+            Logger.info("数据目录已设置为: $trimmed（重启后生效）")
+        } else {
+            Logger.warn("设置数据目录失败: $trimmed")
+        }
+        return ok
+    }
+
     // ---------- 已安装内容 ----------
 
     override suspend fun getInstalledMinecraftVersions(mcPath: String): List<String> = withContext(Dispatchers.IO) {
@@ -377,6 +392,8 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
                     if (Sha1.isFileValid(dest, client.sha1, client.size)) return
                     File(dest).delete()
                 } catch (e: Exception) {
+                    // 协程取消必须传播，不能当作下载失败重试
+                    if (e is kotlinx.coroutines.CancellationException) throw e
                     lastError = e
                 }
             }
@@ -394,6 +411,8 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
             try {
                 return HttpUtil.getBytes(candidate)
             } catch (e: Exception) {
+                // 协程取消必须传播，不能当作下载失败重试
+                if (e is kotlinx.coroutines.CancellationException) throw e
                 lastError = e
             }
         }
@@ -486,6 +505,8 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
                     if (Sha256.isFileValid(dest, selected.sha256)) return
                     File(dest).delete()
                 } catch (e: Exception) {
+                    // 协程取消必须传播，不能当作下载失败重试
+                    if (e is kotlinx.coroutines.CancellationException) throw e
                     lastError = e
                 }
             }
@@ -529,6 +550,20 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
             extraGameArgs = extraGameArgs,
             emit = { event -> _events.tryEmit(event) },
         )
+    }
+
+    /**
+     * 异步启动：在启动器自己的 scope 中跑完整启动流程，
+     * UI 组合销毁不会取消启动/下载。错误通过 LogLine 事件推送。
+     */
+    override fun launchMinecraftAsync(request: LaunchRequest) {
+        scope.launch {
+            runCatching { launchMinecraft(request) }
+                .onFailure { e ->
+                    Logger.error("异步启动失败: ${e.message}")
+                    _events.tryEmit(LauncherEvent.LogLine("ERROR", "启动失败: ${e.message}", ""))
+                }
+        }
     }
 
     /** 按空白拆分自定义参数（允许引号分组）。 */
@@ -778,6 +813,23 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
         // 记录最后启动时间
         instanceStore.add(instance.copy(lastLaunched = OffsetDateTime.now().toString()))
         pid
+    }
+
+    /** 异步启动实例：在启动器自己的 scope 中执行，UI 组合销毁不影响。 */
+    override fun launchInstanceAsync(
+        instanceId: String,
+        username: String,
+        accessToken: String,
+        uuid: String,
+        userType: String,
+    ) {
+        scope.launch {
+            runCatching { launchInstance(instanceId, username, accessToken, uuid, userType) }
+                .onFailure { e ->
+                    Logger.error("异步启动实例失败: ${e.message}")
+                    _events.tryEmit(LauncherEvent.LogLine("ERROR", "启动实例失败: ${e.message}", ""))
+                }
+        }
     }
 
     /** 取已索引 Java 中的第一个路径作为兜底。 */

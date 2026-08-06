@@ -28,18 +28,53 @@ data class AppDataPaths(
 
 /**
  * 解析启动器数据目录：
- * 优先使用可执行程序同级 data/ 目录；不可写时回退到系统配置目录。
+ * 1. 显式覆盖目录（用户设置，存于 data-dir.txt）优先
+ * 2. 可执行程序同级 data/ 目录
+ * 3. 不可写时回退到系统配置目录（%APPDATA%/MaterialLauncher）
  */
 object AppDataPathsResolver {
     fun resolve(): AppDataPaths {
+        // 1. 用户显式指定的数据目录（data-dir.txt 记录）
+        val overrideDir = readDataDirOverride()
+        if (overrideDir != null) {
+            val prepared = runCatching { prepare(overrideDir) }.getOrNull()
+            if (prepared != null) return prepared
+        }
+        // 2. exe 同级 data/
         val primary = executableDir()?.let { File(it, "data").absolutePath }
         if (primary != null) {
             val prepared = runCatching { prepare(primary) }.getOrNull()
             if (prepared != null) return prepared
         }
+        // 3. 系统配置目录回退
         val fallback = File(userConfigDir(), "MaterialLauncher").absolutePath
         return prepare(fallback)
     }
+
+    /** 数据目录标志文件名（存放用户自定义的数据目录绝对路径）。 */
+    private const val DATA_DIR_FLAG = "data-dir.txt"
+
+    /** 读取用户自定义数据目录（若存在且非空）。 */
+    fun readDataDirOverride(): String? = runCatching {
+        // 标志文件可能位于 exe 同级或系统配置目录
+        val candidates = listOfNotNull(
+            executableDir()?.let { File(it, DATA_DIR_FLAG) },
+            File(userConfigDir(), "MaterialLauncher/$DATA_DIR_FLAG"),
+        )
+        candidates.firstOrNull { it.isFile }?.readText()?.trim()?.takeIf { it.isNotEmpty() }
+    }.getOrNull()
+
+    /**
+     * 设置自定义数据目录：写入 exe 同级 data-dir.txt（不可写则写系统配置目录）。
+     * 生效需重启启动器。
+     */
+    fun writeDataDirOverride(dir: String): Boolean = runCatching {
+        val target = executableDir()?.let { File(it, DATA_DIR_FLAG) }
+            ?: File(userConfigDir(), "MaterialLauncher/$DATA_DIR_FLAG")
+        target.parentFile?.mkdirs()
+        target.writeText(dir.trim())
+        true
+    }.getOrDefault(false)
 
     private fun prepare(directory: String): AppDataPaths {
         val dir = File(directory)

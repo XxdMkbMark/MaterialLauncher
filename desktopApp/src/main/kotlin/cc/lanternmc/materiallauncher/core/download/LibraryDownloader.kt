@@ -93,6 +93,8 @@ class LibraryDownloader {
                     if (Sha1.isFileValid(targetPath, artifact.sha1, artifact.size)) return
                     File(targetPath).delete()
                 } catch (e: Exception) {
+                    // 协程取消必须传播，不能当作下载失败重试
+                    if (e is kotlinx.coroutines.CancellationException) throw e
                     lastError = e
                 }
             }

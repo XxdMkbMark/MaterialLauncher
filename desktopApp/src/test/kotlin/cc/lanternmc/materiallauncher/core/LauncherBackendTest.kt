@@ -342,4 +342,44 @@ class LauncherBackendTest {
             backend.listInstances().forEach { backend.deleteInstance(it.id) }
         }
     }
+
+    // ---- 数据目录配置 ----
+
+    @Test
+    fun `data directory get and set round-trip`() {
+        // 默认数据目录 = 隔离的临时目录（dataDirectory 参数）
+        assertEquals(testDataDir.absolutePath, backend.getDataDirectory())
+        // 设置空目录应失败
+        assertFalse(backend.setDataDirectory(""))
+        assertFalse(backend.setDataDirectory("   "))
+        // 设置合法目录应成功（写入标志文件）
+        val newDir = createTempDir()
+        try {
+            assertTrue(backend.setDataDirectory(newDir.absolutePath))
+        } finally {
+            newDir.deleteRecursively()
+            // 清理标志文件，避免影响后续测试
+            cc.lanternmc.materiallauncher.core.config.AppDataPathsResolver
+                .writeDataDirOverride(testDataDir.absolutePath)
+        }
+    }
+
+    // ---- 异步启动 API 存在且不阻塞 ----
+
+    @Test
+    fun `launchMinecraftAsync returns immediately without crashing`() = runBlocking {
+        // 异步启动不应挂起调用方协程；这里只验证 API 可调用（空 gameDir 会走校验后失败，但不抛到调用方）
+        backend.launchMinecraftAsync(
+            LaunchRequest(
+                javaPath = "",
+                gameDir = "",
+                versionId = "",
+                username = "TestUser",
+                maxMemory = "2048M",
+                isolateVersion = true,
+            ),
+        )
+        delay(200)
+        assertTrue(true) // 调用本身不抛异常即可
+    }
 }

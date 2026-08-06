@@ -193,21 +193,16 @@ fun App(backend: LauncherBackend) {
                     Page.INSTANCES -> InstancesPage(
                         api = backend,
                         onLaunchInstance = { instance ->
-                            scope.launch {
-                                val acc = selectedAccount
-                                try {
-                                    val pid = backend.launchInstance(
-                                        instanceId = instance.id,
-                                        username = acc?.username ?: config?.username.orEmpty().ifBlank { "TestUser" },
-                                        accessToken = acc?.accessToken ?: "0",
-                                        uuid = acc?.uuid ?: "00000000-0000-0000-0000-000000000000",
-                                        userType = acc?.userType ?: "legacy",
-                                    )
-                                    showMessage("实例「${instance.name}」已启动, PID=$pid")
-                                } catch (e: Exception) {
-                                    showMessage("启动实例失败: ${e.message}")
-                                }
-                            }
+                            // 异步启动：在启动器自己的协程中执行，UI 组合销毁不影响
+                            val acc = selectedAccount
+                            backend.launchInstanceAsync(
+                                instanceId = instance.id,
+                                username = acc?.username ?: config?.username.orEmpty().ifBlank { "TestUser" },
+                                accessToken = acc?.accessToken ?: "0",
+                                uuid = acc?.uuid ?: "00000000-0000-0000-0000-000000000000",
+                                userType = acc?.userType ?: "legacy",
+                            )
+                            showMessage("实例「${instance.name}」启动中...（日志见「日志」页）")
                         },
                         onMessage = ::showMessage,
                     )
@@ -299,6 +294,7 @@ fun App(backend: LauncherBackend) {
                             SidebarItem("内存") { dialog = SettingsDialog.MEM },
                             SidebarItem("下载源") { advancedDialog = AdvancedDialog.MIRROR },
                             SidebarItem("高级参数") { advancedDialog = AdvancedDialog.ADVANCED_ARGS },
+                            SidebarItem("数据目录") { advancedDialog = AdvancedDialog.DATA_DIR },
                         ),
                     ),
                 ),

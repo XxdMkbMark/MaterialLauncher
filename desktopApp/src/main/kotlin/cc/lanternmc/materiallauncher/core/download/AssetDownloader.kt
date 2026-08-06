@@ -89,6 +89,8 @@ class AssetDownloader {
                                     return@withPermit
                                 }
                             } catch (e: Exception) {
+                                // 协程取消必须传播，不能当作下载失败重试
+                                if (e is kotlinx.coroutines.CancellationException) throw e
                                 if (attempts < MAX_ASSET_ATTEMPTS) {
                                     Logger.warn("Asset 下载失败（第 $attempts 次，将重试）: ${e.message}")
                                 }

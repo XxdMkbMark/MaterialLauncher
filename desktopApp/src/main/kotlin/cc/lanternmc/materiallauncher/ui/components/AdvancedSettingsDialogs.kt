@@ -42,7 +42,7 @@ import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.LauncherApi
 
 /** 高级设置对话框类型（独立于 pages.SettingsDialog，避免改动现有文件）。 */
-enum class AdvancedDialog { MIRROR, ADVANCED_ARGS }
+enum class AdvancedDialog { MIRROR, ADVANCED_ARGS, DATA_DIR }
 
 @Composable
 fun AdvancedSettingsDialogs(
@@ -55,8 +55,57 @@ fun AdvancedSettingsDialogs(
     when (dialog) {
         AdvancedDialog.MIRROR -> MirrorSourceDialog(api, config, onDismiss, onApply)
         AdvancedDialog.ADVANCED_ARGS -> AdvancedArgsDialog(api, config, onDismiss, onApply)
+        AdvancedDialog.DATA_DIR -> DataDirectoryDialog(api, onDismiss)
         null -> Unit
     }
+}
+
+/** 数据目录设置：迁移 config/auth/instances 到自定义目录（重启生效）。 */
+@Composable
+private fun DataDirectoryDialog(
+    api: LauncherApi,
+    onDismiss: () -> Unit,
+) {
+    var current by remember { mutableStateOf(api.getDataDirectory()) }
+    var draft by remember { mutableStateOf(current) }
+    var message by remember { mutableStateOf<String?>(null) }
+    androidx.compose.material3.AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("数据目录设置") },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    "启动器的配置 / 账户 / 实例清单 / Java 缓存存放在此目录。" +
+                        "当前安装版默认在用户目录（%APPDATA%\\MaterialLauncher），免安装版在 exe 同级 data\\。",
+                    style = MaterialTheme.typography.bodySmall,
+                )
+                OutlinedTextField(
+                    value = draft,
+                    onValueChange = { draft = it; message = null },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    label = { Text("数据目录（绝对路径）") },
+                )
+                message?.let {
+                    Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
+                }
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                if (draft.isBlank()) {
+                    message = "目录不能为空"
+                    return@Button
+                }
+                if (api.setDataDirectory(draft)) {
+                    message = "已保存，重启启动器后生效"
+                } else {
+                    message = "保存失败：目录不可写或路径非法"
+                }
+            }) { Text("保存") }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("关闭") } },
+    )
 }
 
 @Composable

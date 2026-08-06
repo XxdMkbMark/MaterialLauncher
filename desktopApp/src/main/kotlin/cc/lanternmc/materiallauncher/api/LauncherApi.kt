@@ -32,6 +32,15 @@ interface LauncherApi {
     suspend fun getLauncherMinecraftDir(): String
     suspend fun getLauncherJavaDir(): String
 
+    /** 当前启动器数据目录（config/auth/instances 存放处）。 */
+    fun getDataDirectory(): String
+
+    /**
+     * 设置自定义数据目录（写入 data-dir.txt 标志文件），下次启动生效。
+     * @return 是否写入成功
+     */
+    fun setDataDirectory(dir: String): Boolean
+
     // ---- 已安装内容 ----
     suspend fun getInstalledMinecraftVersions(mcPath: String): List<String>
     suspend fun findJavaPaths(): List<JavaInstallation>
@@ -60,8 +69,21 @@ interface LauncherApi {
     fun cancelDownload(taskKey: String)
 
     // ---- 游戏启动 ----
+    /**
+     * 启动 Minecraft（同步等待启动完成，返回 PID）。
+     * 注意：该挂起函数运行在调用方协程中；若调用方是 UI 组合作用域，
+     * UI 离开组合会导致整个启动流程（含下载）被取消。长任务建议用
+     * [launchMinecraftAsync]。
+     */
     suspend fun launchMinecraft(request: LaunchRequest): Int
     suspend fun resolveLaunchJava(gameDir: String, versionId: String, preferred: String): String
+
+    /**
+     * 异步启动：在启动器自己的协程作用域中执行完整启动流程
+     * （下载/校验/拉起进程），不依赖调用方协程生命周期。
+     * 结果与错误通过 [LauncherEvent]（GameStarted / GameExited / LogLine）推送。
+     */
+    fun launchMinecraftAsync(request: LaunchRequest)
 
     // ---- 游戏进程管理 ----
     fun listRunningGames(): List<RunningGameInfo>
@@ -79,6 +101,9 @@ interface LauncherApi {
 
     /** 启动一个实例（使用实例自身的 gameDir/版本/Java/内存配置）。返回 PID。 */
     suspend fun launchInstance(instanceId: String, username: String, accessToken: String, uuid: String, userType: String): Int
+
+    /** 异步启动实例：在启动器自己的协程作用域中执行，不依赖调用方协程生命周期。 */
+    fun launchInstanceAsync(instanceId: String, username: String, accessToken: String, uuid: String, userType: String)
 
     // ---- 账户 ----
     suspend fun getAccounts(): List<Account>
