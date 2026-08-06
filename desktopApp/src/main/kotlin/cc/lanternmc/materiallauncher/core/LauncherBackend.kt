@@ -173,6 +173,11 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
 
     override suspend fun deleteMinecraftVersion(gameDir: String, versionId: String): Boolean =
         withContext(Dispatchers.IO) {
+            // 安全校验：拒绝空名、路径分隔符、目录穿越——防止误删 versions 根目录或越界
+            if (!isSafeVersionName(versionId)) {
+                Logger.warn("拒绝删除非法版本名: $versionId")
+                return@withContext false
+            }
             val versionDir = File(gameDir, "versions/$versionId")
             if (!versionDir.isDirectory) return@withContext false
             val ok = runCatching { versionDir.deleteRecursively() }.getOrDefault(false)
@@ -190,7 +195,11 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
             val launcherJavaDir = configStore.launcherJavaDir()
             // 只允许删除启动器自管的 Java（位于启动器 java 目录下），避免误删系统 JDK
             val homePath = home.absolutePath
-            if (!homePath.startsWith(launcherJavaDir)) {
+            val launcherJavaNorm = File(launcherJavaDir).absolutePath
+            // 前缀必须按路径边界匹配（防止 "D:\java" 前缀误匹配 "D:\java2"）
+            val withinLauncherDir = homePath == launcherJavaNorm ||
+                homePath.startsWith(launcherJavaNorm + File.separator)
+            if (!withinLauncherDir) {
                 Logger.warn("拒绝删除非启动器管理的 Java: $homePath")
                 return@withContext false
             }
@@ -328,11 +337,28 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
         }
     }
 
-    /** 清洗为合法的版本文件夹名：去首尾空白、替换非法字符、禁止空名。 */
+    /**
+     * 清洗为合法的版本文件夹名：去首尾空白、替换非法字符、禁止空名，
+     * 并拒绝 "." / ".."（目录穿越）与保留的 Windows 设备名。
+     */
     private fun sanitizeFolderName(raw: String): String {
-        val trimmed = raw.trim()
-        val cleaned = trimmed.replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        var cleaned = raw.trim().replace(Regex("[\\\\/:*?\"<>|]"), "_")
+        // 目录穿越防御：. 与 .. 不能作为文件夹名
+        if (cleaned == "." || cleaned == "..") cleaned = ""
+        // Windows 保留设备名（CON/PRN/AUX/NUL/COM1-9/LPT1-9）加后缀避免歧义
+        if (cleaned.matches(Regex("(?i)(con|prn|aux|nul|com[1-9]|lpt[1-9])"))) cleaned += "_"
         return cleaned.ifBlank { "instance" }
+    }
+
+    /**
+     * 版本/实例名安全校验：仅允许单层目录名（不含分隔符与穿越），
+     * 用于所有删除操作前，防止误删 versions 根目录或越界删除。
+     */
+    private fun isSafeVersionName(name: String): Boolean {
+        if (name.isBlank()) return false
+        if (name == "." || name == "..") return false
+        if (name.contains('/') || name.contains('\\')) return false
+        return true
     }
 
     /** 下载 client jar：镜像回退 + 校验失败自动重下（最多 3 次）。 */
@@ -693,9 +719,14 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
             instanceStore.remove(instanceId)
         }
         // 删除实例对应的版本文件夹（versions/<name>），绝不删除 mcPath 根目录
-        val instanceDir = File(File(instance.gameDir, "versions"), instance.name)
+        val instanceName = instance.name
+        if (!isSafeVersionName(instanceName)) {
+            Logger.warn("拒绝删除非法实例名: $instanceName")
+            return@withContext false
+        }
+        val instanceDir = File(File(instance.gameDir, "versions"), instanceName)
         runCatching { instanceDir.deleteRecursively() }
-        Logger.info("已删除实例: ${instance.name}")
+        Logger.info("已删除实例: $instanceName")
         true
     }
 

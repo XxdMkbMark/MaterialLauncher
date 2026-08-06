@@ -27,6 +27,7 @@ import cc.lanternmc.materiallauncher.core.model.AssetIndex
 import cc.lanternmc.materiallauncher.core.model.AssetIndexInfo
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
 import cc.lanternmc.materiallauncher.core.util.Logger
+import cc.lanternmc.materiallauncher.core.util.SafePath
 import cc.lanternmc.materiallauncher.core.util.Sha1
 
 /**
@@ -46,6 +47,11 @@ class AssetDownloader {
         indexesDir.mkdirs()
         objectsDir.mkdirs()
 
+        // 路径穿越防护：来自版本 JSON 的索引 id 必须合法
+        if (!SafePath.isSafeRelativePath(assetIndex.id)) {
+            Logger.warn("拒绝非法资产索引 id: ${assetIndex.id}")
+            return
+        }
         val indexFile = File(indexesDir, "${assetIndex.id}.json")
         if (!indexFile.isFile) {
             // 资源索引也走镜像回退
@@ -63,6 +69,11 @@ class AssetDownloader {
                 launch(Dispatchers.IO) {
                     semaphore.withPermit {
                         val hashPrefix = asset.hash.take(2)
+                        // 路径穿越防护：asset hash 必须是 40 位 hex，否则拒绝
+                        if (!SafePath.isSafeAssetHash(asset.hash)) {
+                            Logger.warn("拒绝非法 asset hash: ${asset.hash.take(8)}...")
+                            return@withPermit
+                        }
                         val targetDir = File(objectsDir, hashPrefix)
                         val targetFile = File(targetDir, asset.hash)
                         if (Sha1.isFileValid(targetFile.absolutePath, asset.hash, asset.size)) return@withPermit

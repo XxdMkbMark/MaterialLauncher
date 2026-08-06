@@ -297,4 +297,49 @@ class LauncherBackendTest {
             backend.listInstances().forEach { backend.deleteInstance(it.id) }
         }
     }
+
+    // ---- 路径安全：非法名字必须被拒绝，绝不触碰 versions 根目录 ----
+
+    @Test
+    fun `deleteMinecraftVersion rejects empty and traversal names`() = runBlocking {
+        val cfg = backend.configStore.load()
+        val mcPath = cfg.minecraft.path
+        val versionDir = File(mcPath, "versions")
+        versionDir.mkdirs()
+        val sentinel = File(versionDir, "sentinel.txt")
+        sentinel.writeText("keep")
+
+        try {
+            // 空名、.. 、带斜杠的名字一律拒绝，versions 目录本身必须安然无恙
+            assertFalse(backend.deleteMinecraftVersion(mcPath, ""))
+            assertFalse(backend.deleteMinecraftVersion(mcPath, ".."))
+            assertFalse(backend.deleteMinecraftVersion(mcPath, "a/b"))
+            assertFalse(backend.deleteMinecraftVersion(mcPath, "../escape"))
+            assertTrue(versionDir.isDirectory)
+            assertTrue(sentinel.exists(), "versions 目录内容不得被误删")
+        } finally {
+            sentinel.delete()
+        }
+    }
+
+    @Test
+    fun `sanitizeFolderName neutralizes dot and device names`() = runBlocking {
+        // 通过 createInstance 验证：. / .. / 设备名会被清洗为安全名字
+        val cfg = backend.configStore.load()
+        val mcPath = cfg.minecraft.path
+        val versionDir = File(mcPath, "versions")
+        versionDir.mkdirs()
+        try {
+            val inst = backend.createInstance("..", "1.20.1")
+            // 清洗后不会是 ".."，而应是 "instance" 或别的安全名
+            assertFalse(inst.name == "..")
+            assertFalse(inst.name == ".")
+            assertFalse(inst.name.contains('/'))
+            assertFalse(inst.name.contains('\\'))
+            // 目录创建在 versions 下，且不在 mcPath 根
+            assertTrue(File(versionDir, inst.name).isDirectory)
+        } finally {
+            backend.listInstances().forEach { backend.deleteInstance(it.id) }
+        }
+    }
 }

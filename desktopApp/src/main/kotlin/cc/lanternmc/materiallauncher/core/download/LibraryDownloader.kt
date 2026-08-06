@@ -25,6 +25,7 @@ import cc.lanternmc.materiallauncher.core.util.ArchiveExtractor
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
 import cc.lanternmc.materiallauncher.core.util.Logger
 import cc.lanternmc.materiallauncher.core.util.Os
+import cc.lanternmc.materiallauncher.core.util.SafePath
 import cc.lanternmc.materiallauncher.core.util.Sha1
 import cc.lanternmc.materiallauncher.core.util.currentOs
 import cc.lanternmc.materiallauncher.core.util.is32Bit
@@ -63,6 +64,11 @@ class LibraryDownloader {
             }
 
             val artifact = library.downloads.artifact ?: continue
+            // 路径穿越防护：来自版本 JSON 的相对路径必须合法
+            if (!SafePath.isSafeRelativePath(artifact.path)) {
+                Logger.warn("拒绝非法依赖路径: ${artifact.path}")
+                continue
+            }
             val targetPath = File(libraryDir, artifact.path).absolutePath
             ensureArtifact(targetPath, artifact, source)
             classpath.add(targetPath)
