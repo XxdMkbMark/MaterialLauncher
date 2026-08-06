@@ -40,9 +40,10 @@ import kotlin.time.Duration.Companion.milliseconds
  */
 object MicrosoftAuthService {
 
-    // Xbox/Minecraft 官方注册的公共客户端 id（已注册 Xbox Live，无需 client secret）。
+    // Material Launcher 自有 Azure 应用（已通过 Mojang/Xbox Live 注册许可名单，
+    // 2026-08 批准）。公共客户端，设备码流无需 client secret。
     // 自建 Azure 应用未注册 Xbox Live，会在 login_with_xbox 阶段返回 403 "Invalid app registration"。
-    private const val CLIENT_ID = "f7d9b4c9-d44f-403f-9641-4f8bf6926eaa"
+    private const val CLIENT_ID = "496b4e7d-7115-4ffb-bdb9-04108320023d"
 
     private const val DEVICE_CODE_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode"
     private const val TOKEN_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/token"
