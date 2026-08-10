@@ -75,6 +75,9 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import cc.lanternmc.materiallauncher.ui.components.UnderConstructionDialog
+import cc.lanternmc.materiallauncher.ui.navigation.AppNavHost
+import cc.lanternmc.materiallauncher.ui.navigation.Destination
+import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.pages.SampleDownloadPage
 import cc.lanternmc.materiallauncher.ui.pages.SampleSettings
 import cc.lanternmc.materiallauncher.ui.pages.SampleUsersManagement
@@ -111,6 +114,7 @@ fun SampleHome() {
     }
 }
 
+/*
 enum class Destination (val route: String, val label: String, val icon: ImageVector, val showInNavigationRail: Boolean = true) {
     HOME("home", "主页", Icons.Rounded.Home, showInNavigationRail = false),
     DOWNLOAD("download", "下载", Icons.Rounded.Download),
@@ -118,6 +122,7 @@ enum class Destination (val route: String, val label: String, val icon: ImageVec
     VERSIONS("versions","版本", Icons.Rounded.Checklist),
     SETTINGS("settings", "设置", Icons.Rounded.Settings),
 }
+
 
 @Composable
 fun AppNavHost (navController: NavHostController, startDestination: Destination, modifier: Modifier = Modifier) {
@@ -136,6 +141,8 @@ fun AppNavHost (navController: NavHostController, startDestination: Destination,
     }
 }
 
+ */
+
 @Preview
 @Composable
 fun Home(modifier: Modifier = Modifier) {
@@ -152,6 +159,7 @@ fun Home(modifier: Modifier = Modifier) {
     // val coroutineScope = rememberCoroutineScope()
 
     MaterialTheme(lightScheme) {
+        AppNavHost(navController = navController)
         Scaffold(modifier = modifier) { contentPadding ->
             Row(modifier = Modifier.padding(contentPadding)) {
                 // 左侧导航栏
@@ -185,7 +193,7 @@ fun Home(modifier: Modifier = Modifier) {
 
                             FloatingActionButton(
                                 onClick = {
-                                    navController.navigate(Destination.HOME.route) {
+                                    navController.navigateTo(Destination.HOME) {
                                         launchSingleTop = true
                                     }
                                 },
@@ -206,43 +214,13 @@ fun Home(modifier: Modifier = Modifier) {
                             modifier = Modifier.weight(1f).padding(20.dp),  // 占据剩余空间
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            /*
-                            navigationDestinations.forEach { destination ->
-                                val currentRoute = null
-                                NavigationRailItem(
-                                    selected = currentRoute == destination.route,
-                                    onClick = {
-                                        navController.navigate(destination.route) {
-                                            launchSingleTop = true
 
-                                            popUpTo(
-                                                navController.graph.startDestinationId
-                                            ) {
-                                                saveState = true
-                                            }
-
-                                            restoreState = true
-                                        }
-                                    },
-                                    icon = {
-                                        Icon(
-                                            imageVector = destination.icon,
-                                            contentDescription = destination.label,
-                                        )
-                                    },
-                                    label = {
-                                        Text(destination.label)
-                                    },
-                                )
-                            }
-
-                             */
                             Destination.entries.forEachIndexed { index, destination ->
                                 if (!destination.showInNavigationRail) return@forEachIndexed
                                 NavigationRailItem(
                                     selected = selectedDestination == index,
                                     onClick = {
-                                        navController.navigate(route = destination.route)
+                                        navController.navigateTo(destination)
                                         selectedDestination = index
                                     },
                                     icon = {
