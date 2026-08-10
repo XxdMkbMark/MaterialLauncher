@@ -23,9 +23,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavHostController
 
 @Composable
-fun SampleVersionsManagement() {
+fun SampleVersionsManagement(navController: NavHostController) {
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             Text("版本管理")

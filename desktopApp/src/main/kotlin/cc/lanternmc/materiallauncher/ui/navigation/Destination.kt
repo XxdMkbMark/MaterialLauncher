@@ -8,7 +8,7 @@ import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.ui.graphics.vector.ImageVector
 
-enum class Destination (  // 在此处定义所有需要用到的页面
+enum class Destination (  // 在此处定义所有需要跳转的页面
     val route: String,
     val label: String,
     val icon: ImageVector,

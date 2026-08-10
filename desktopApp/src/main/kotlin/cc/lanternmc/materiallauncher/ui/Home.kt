@@ -87,7 +87,7 @@ import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 import kotlinx.coroutines.coroutineScope
 
 @Composable
-fun HomePage() {
+fun HomePage(navController: NavHostController) {
     var showDialog by remember { mutableStateOf(false) }
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -130,7 +130,6 @@ fun Home(modifier: Modifier = Modifier) {
     // val coroutineScope = rememberCoroutineScope()
 
     MaterialTheme(lightScheme) {
-        AppNavHost(navController = navController)
         Scaffold(modifier = modifier) { contentPadding ->
             Row(modifier = Modifier.padding(contentPadding)) {
                 // 左侧导航栏

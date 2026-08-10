@@ -36,14 +36,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import cc.lanternmc.materiallauncher.ui.navigation.AppNavHost
+import cc.lanternmc.materiallauncher.ui.navigation.Destination
+import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 
 @Composable
-fun SampleSettings() {
+fun SampleSettings(navController: NavHostController) {
     MaterialTheme(lightScheme) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Box(contentAlignment = Alignment.Center) { // 第一行的设置项目
-                Button(modifier = Modifier.height(140.dp).width(140.dp), onClick = { }, shape = RoundedCornerShape(12.dp)) {
+                Button(
+                    modifier = Modifier.height(140.dp).width(140.dp),
+                    onClick = {
+                        navController.navigateTo(destination = Destination.JAVA_SETTINGS)
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center,
