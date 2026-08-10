@@ -87,7 +87,7 @@ import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 import kotlinx.coroutines.coroutineScope
 
 @Composable
-fun SampleHome() {
+fun HomePage() {
     var showDialog by remember { mutableStateOf(false) }
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -113,35 +113,6 @@ fun SampleHome() {
         )
     }
 }
-
-/*
-enum class Destination (val route: String, val label: String, val icon: ImageVector, val showInNavigationRail: Boolean = true) {
-    HOME("home", "主页", Icons.Rounded.Home, showInNavigationRail = false),
-    DOWNLOAD("download", "下载", Icons.Rounded.Download),
-    USERS("users", "档案", Icons.Rounded.Person),
-    VERSIONS("versions","版本", Icons.Rounded.Checklist),
-    SETTINGS("settings", "设置", Icons.Rounded.Settings),
-}
-
-
-@Composable
-fun AppNavHost (navController: NavHostController, startDestination: Destination, modifier: Modifier = Modifier) {
-    NavHost(navController, startDestination.route){
-        Destination.entries.forEach { destination ->
-            composable(destination.route) {
-                when (destination) {
-                    Destination.HOME -> SampleHome()
-                    Destination.DOWNLOAD -> SampleDownloadPage()
-                    Destination.USERS -> SampleUsersManagement()
-                    Destination.VERSIONS -> SampleVersionsManagement()
-                    Destination.SETTINGS -> SampleSettings()
-                }
-            }
-        }
-    }
-}
-
- */
 
 @Preview
 @Composable
