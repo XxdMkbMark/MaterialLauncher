@@ -4,9 +4,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
@@ -18,35 +16,37 @@ import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RangeSlider
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.Typography
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JavaSettingsPage(navController: NavHostController) {
-    val javaList = listOf("17.0", "21.0", "25.0", "1.8.0")
+    val javaList = listOf("17.0", "21.0", "25.0", "1.8.0")    // 临时
 
-    var sliderPosition by remember { mutableStateOf(0f..16384f) }    // 内存滑块
+    var rangeSliderPosition by remember { mutableStateOf(0f..4096f) }    // 范围内存滑块
+    var sliderPosition by remember { mutableFloatStateOf(4096f) }   // 内存滑块
     var Xms = 0
     var Xmx = 0
 
-    var expanded by remember { mutableStateOf(false) }    // 下拉框状态
-    var selectedOption by remember { mutableStateOf(javaList[0]) }
+    var isJavaSelectionExpanded by remember { mutableStateOf(false) }    // 下拉框
+    var selectedJava by remember { mutableStateOf(javaList[0]) }
 
-    var checked by remember { mutableStateOf(true) }    // 复选框状态
+    var doDynamicMemChecked by remember { mutableStateOf(false) }    // 复选框
 
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize()) {
@@ -62,29 +62,29 @@ fun JavaSettingsPage(navController: NavHostController) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     ExposedDropdownMenuBox(
-                        expanded = expanded,
-                        onExpandedChange = { expanded = it }
+                        expanded = isJavaSelectionExpanded,
+                        onExpandedChange = { isJavaSelectionExpanded = it }
                     ) {
                         // 文本框
                         TextField(
-                            value = selectedOption,
+                            value = selectedJava,
                             onValueChange = {},
                             readOnly = true,
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isJavaSelectionExpanded) },
                             modifier = Modifier.menuAnchor()     // 将文本框与菜单锚定
                         )
 
                         // 下拉菜单
                         ExposedDropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
+                            expanded = isJavaSelectionExpanded,
+                            onDismissRequest = { isJavaSelectionExpanded = false }
                         ) {
                             javaList.forEach { java ->
                                 DropdownMenuItem(
                                     text = { Text(java) },
                                     onClick = {
-                                        selectedOption = java
-                                        expanded = false
+                                        selectedJava = java
+                                        isJavaSelectionExpanded = false
                                     }
                                 )
                             }
@@ -104,34 +104,78 @@ fun JavaSettingsPage(navController: NavHostController) {
                     }
                 }
                 Text(text = "全局JVM内存分配", modifier = Modifier.padding(4.dp,26.dp,0.dp,4.dp))
-                Column {
-                    RangeSlider(
-                        value = sliderPosition,
-                        onValueChange = { range -> sliderPosition = range },
-                        valueRange = 0f..16384f,
-                        onValueChangeFinished = {
-                            // launch some business logic update with the state you hold
-                            // viewModel.updateSelectedSliderValue(sliderPosition)
-                        },
-                    )
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.End),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Xms = sliderPosition.start.toInt()
-                        Xmx = sliderPosition.endInclusive.toInt()
-                        Text(
-                            if (Xms == 0) "最小内存: 不指定      最大内存: ${Xmx}MB" else "最小内存: ${Xms}MB      最大内存: ${Xmx}MB"
+                Column(
+                    modifier = Modifier.padding(20.dp,0.dp,36.dp,0.dp)
+                ) {
+                    if (!doDynamicMemChecked) {      // 根据是否勾选复选框采用两种不同布局
+                        Slider(
+                            value = sliderPosition,
+                            onValueChange = { sliderPosition = it },
+                            valueRange = 256f..16384f
                         )
                         Row(
+                            horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.End),
                             verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy((-5).dp, Alignment.End)
-                        ){
-                            Checkbox(
-                                checked = checked,
-                                onCheckedChange = { checked = it }
+                            modifier = Modifier.padding(0.dp, 0.dp, 0.dp)
+                        ) {
+                            Xmx = sliderPosition.toInt()
+                            Xms = Xmx
+                            Text(text = "最大内存: ${Xmx}MB", fontSize = 14.sp)
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy((-5).dp, Alignment.End)
+                            ) {
+                                Checkbox(
+                                    checked = doDynamicMemChecked,
+                                    onCheckedChange = { doDynamicMemChecked = it },
+                                    modifier = Modifier.scale(0.9F)
+                                )
+                                Text(
+                                    text = "启用动态内存调整",
+                                    fontSize = 14.sp,
+                                )
+                            }
+                        }
+                    } else {
+                        RangeSlider(
+                            value = rangeSliderPosition,
+                            onValueChange = { range -> rangeSliderPosition = range },
+                            valueRange = 0f..16384f,
+                            onValueChangeFinished = {
+                                // launch some business logic update with the state you hold
+                                // viewModel.updateSelectedSliderValue(sliderPosition)
+                            },
+                        )
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.End),
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(0.dp, 0.dp, 0.dp)
+                        ) {
+                            Xms = rangeSliderPosition.start.toInt()
+                            Xmx = rangeSliderPosition.endInclusive.toInt()
+                            Text(
+                                text =
+                                    if (Xms == 0) {     // 如果最小内存设为0则采用显示不指定
+                                        "最小内存: 不指定      最大内存: ${Xmx}MB"
+                                    } else {
+                                        "最小内存: ${Xms}MB      最大内存: ${Xmx}MB"
+                                    },
+                                fontSize = 14.sp,
                             )
-                            Text("禁用内存动态调整")
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy((-5).dp, Alignment.End)
+                            ) {
+                                Checkbox(
+                                    checked = doDynamicMemChecked,
+                                    onCheckedChange = { doDynamicMemChecked = it },
+                                    modifier = Modifier.scale(0.9F)
+                                )
+                                Text(
+                                    text = "启用动态内存调整",
+                                    fontSize = 14.sp,
+                                )
+                            }
                         }
                     }
                 }
