@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -42,8 +43,11 @@ fun JavaSettingsPage(navController: NavHostController) {
     var Xms = 0
     var Xmx = 0
 
-    var expanded by remember { mutableStateOf(false) }    // 状态
+    var expanded by remember { mutableStateOf(false) }    // 下拉框状态
     var selectedOption by remember { mutableStateOf(javaList[0]) }
+
+    var checked by remember { mutableStateOf(true) }    // 复选框状态
+
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             Row {
@@ -111,17 +115,24 @@ fun JavaSettingsPage(navController: NavHostController) {
                         },
                     )
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                        horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.End),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Xms = sliderPosition.start.toInt()
                         Xmx = sliderPosition.endInclusive.toInt()
-                        if (Xms == 0) {
-                            Text(text = "最小内存: 不指定      最大内存: ${Xmx}MB")
-                        } else {
-                            Text(text = "最小内存: ${Xms}MB      最大内存: ${Xmx}MB")
+                        Text(
+                            if (Xms == 0) "最小内存: 不指定      最大内存: ${Xmx}MB" else "最小内存: ${Xms}MB      最大内存: ${Xmx}MB"
+                        )
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy((-5).dp, Alignment.End)
+                        ){
+                            Checkbox(
+                                checked = checked,
+                                onCheckedChange = { checked = it }
+                            )
+                            Text("禁用内存动态调整")
                         }
-
                     }
                 }
             }
