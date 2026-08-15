@@ -50,7 +50,7 @@ fun JavaSettingsPage(navController: NavHostController) {
 
             }
         }
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(18.dp,0.dp,0.dp,0.dp)) {
             Column {
                 Text(text = "全局Java版本", modifier = Modifier.padding(4.dp,10.dp))
                 Row(
@@ -110,12 +110,18 @@ fun JavaSettingsPage(navController: NavHostController) {
                             // viewModel.updateSelectedSliderValue(sliderPosition)
                         },
                     )
-                    Xms = sliderPosition.start.roundToInt()
-                    Xmx = sliderPosition.endInclusive.roundToInt()
-                    if (Xms == 0) {
-                        Text(text = "最小内存: 不指定      最大内存: ${Xmx}MB")
-                    } else {
-                        Text(text = "最小内存: ${Xms}MB      最大内存: ${Xmx}MB")
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Xms = sliderPosition.start.toInt()
+                        Xmx = sliderPosition.endInclusive.toInt()
+                        if (Xms == 0) {
+                            Text(text = "最小内存: 不指定      最大内存: ${Xmx}MB")
+                        } else {
+                            Text(text = "最小内存: ${Xms}MB      最大内存: ${Xmx}MB")
+                        }
+
                     }
                 }
             }

@@ -30,6 +30,7 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "Material Launcher",
         state = rememberWindowState(width = 1032.dp, height = 617.dp),
+        resizable = false
     ) {
         Home()
     }
