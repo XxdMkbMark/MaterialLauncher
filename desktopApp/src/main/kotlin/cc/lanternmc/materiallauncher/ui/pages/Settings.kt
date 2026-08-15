@@ -60,7 +60,7 @@ fun SampleSettings(navController: NavHostController) {
                         verticalArrangement = Arrangement.Center,
                     ) {
                         Icon(Icons.Outlined.Settings, "Settings", modifier = Modifier.padding(10.dp).size(44.dp))
-                        Text("Java设置")
+                        Text("Java 设置")
                     }
                 }
             }

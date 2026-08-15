@@ -89,7 +89,7 @@ import kotlinx.coroutines.coroutineScope
 @Composable
 fun HomePage(navController: NavHostController) {
     var showDialog by remember { mutableStateOf(false) }
-    MaterialTheme {
+    MaterialTheme(lightScheme) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Box(
                 modifier = Modifier.size(400.dp, 200.dp).background(lightScheme.secondaryContainer, shape = RoundedCornerShape(12.dp)),
