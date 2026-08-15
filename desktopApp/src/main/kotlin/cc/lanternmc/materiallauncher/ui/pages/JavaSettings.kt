@@ -18,6 +18,7 @@ import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RangeSlider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.Typography
@@ -30,16 +31,26 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun JavaSettingsPage(navController: NavHostController) {
     val javaList = listOf("17.0", "21.0", "25.0", "1.8.0")
-    var sliderPosition by remember { mutableStateOf(0f..100f) }
+
+    var sliderPosition by remember { mutableStateOf(0f..16384f) }    // 内存滑块
+    var Xms = 0
+    var Xmx = 0
+
     var expanded by remember { mutableStateOf(false) }    // 状态
     var selectedOption by remember { mutableStateOf(javaList[0]) }
     MaterialTheme {
-        Box(modifier = Modifier.fillMaxSize().padding(16.dp,16.dp)) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Row {
+
+            }
+        }
+        Box(modifier = Modifier.fillMaxSize()) {
             Column {
                 Text(text = "全局Java版本", modifier = Modifier.padding(4.dp,10.dp))
                 Row(
@@ -88,8 +99,25 @@ fun JavaSettingsPage(navController: NavHostController) {
                         }
                     }
                 }
-                Text(text = "全局JVM内存分配", modifier = Modifier.padding(4.dp,16.dp))
-
+                Text(text = "全局JVM内存分配", modifier = Modifier.padding(4.dp,26.dp,0.dp,4.dp))
+                Column {
+                    RangeSlider(
+                        value = sliderPosition,
+                        onValueChange = { range -> sliderPosition = range },
+                        valueRange = 0f..16384f,
+                        onValueChangeFinished = {
+                            // launch some business logic update with the state you hold
+                            // viewModel.updateSelectedSliderValue(sliderPosition)
+                        },
+                    )
+                    Xms = sliderPosition.start.roundToInt()
+                    Xmx = sliderPosition.endInclusive.roundToInt()
+                    if (Xms == 0) {
+                        Text(text = "最小内存: 不指定      最大内存: ${Xmx}MB")
+                    } else {
+                        Text(text = "最小内存: ${Xms}MB      最大内存: ${Xmx}MB")
+                    }
+                }
             }
         }
     }
