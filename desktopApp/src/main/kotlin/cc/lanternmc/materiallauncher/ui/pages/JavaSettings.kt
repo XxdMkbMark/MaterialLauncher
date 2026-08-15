@@ -169,7 +169,7 @@ fun JavaSettingsPage(navController: NavHostController) {
                                     ) {
                                         Xmx = sliderPosition.toInt()
                                         Xms = Xmx
-                                        Text(text = "最大内存: ${Xmx}MB", fontSize = 14.sp)
+                                        Text(text = "分配的内存: ${Xmx}MB", fontSize = 14.sp)
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy((-5).dp, Alignment.End)
