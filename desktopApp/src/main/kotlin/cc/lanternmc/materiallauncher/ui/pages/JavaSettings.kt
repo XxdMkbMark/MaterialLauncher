@@ -54,12 +54,13 @@ fun JavaSettingsPage(navController: NavHostController) {
 
             }
         }
-        Box(modifier = Modifier.fillMaxSize().padding(18.dp,0.dp,0.dp,0.dp)) {
+        Box(modifier = Modifier.fillMaxSize().padding(start = 18.dp)) {
             Column {
                 Text(text = "全局Java版本", modifier = Modifier.padding(4.dp,10.dp))
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(start = 20.dp)
                 ) {
                     ExposedDropdownMenuBox(
                         expanded = isJavaSelectionExpanded,
@@ -92,7 +93,7 @@ fun JavaSettingsPage(navController: NavHostController) {
                     }
                     Button(
                         onClick = {},
-                        modifier = Modifier.padding(12.dp,0.dp)
+                        modifier = Modifier.padding(horizontal = 12.dp)
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
@@ -103,9 +104,9 @@ fun JavaSettingsPage(navController: NavHostController) {
                         }
                     }
                 }
-                Text(text = "全局JVM内存分配", modifier = Modifier.padding(4.dp,26.dp,0.dp,4.dp))
+                Text(text = "全局JVM内存分配", modifier = Modifier.padding(start = 4.dp, top = 26.dp, bottom = 4.dp))
                 Column(
-                    modifier = Modifier.padding(20.dp,0.dp,36.dp,0.dp)
+                    modifier = Modifier.padding(start = 20.dp, end = 36.dp)
                 ) {
                     if (!doDynamicMemChecked) {      // 根据是否勾选复选框采用两种不同布局
                         Slider(
@@ -155,7 +156,7 @@ fun JavaSettingsPage(navController: NavHostController) {
                             Xmx = rangeSliderPosition.endInclusive.toInt()
                             Text(
                                 text =
-                                    if (Xms == 0) {     // 如果最小内存设为0则采用显示不指定
+                                    if (Xms == 0) {     // 如果最小内存设为0则显示不指定
                                         "最小内存: 不指定      最大内存: ${Xmx}MB"
                                     } else {
                                         "最小内存: ${Xms}MB      最大内存: ${Xmx}MB"
