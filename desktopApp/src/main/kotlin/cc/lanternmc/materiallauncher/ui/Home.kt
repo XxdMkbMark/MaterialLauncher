@@ -72,6 +72,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import cc.lanternmc.materiallauncher.ui.components.UnderConstructionDialog
@@ -84,6 +85,7 @@ import cc.lanternmc.materiallauncher.ui.pages.SampleUsersManagement
 import cc.lanternmc.materiallauncher.ui.pages.SampleVersionsManagement
 import cc.lanternmc.materiallauncher.ui.theme.backgroundLight
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
 import kotlinx.coroutines.coroutineScope
 
 @Composable
@@ -117,6 +119,7 @@ fun HomePage(navController: NavHostController) {
 @Preview
 @Composable
 fun Home(modifier: Modifier = Modifier) {
+    val viewModel = remember { JavaScannerViewModel() }
     val navController = rememberNavController()
     val startDestination = Destination.HOME
     var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
@@ -210,6 +213,7 @@ fun Home(modifier: Modifier = Modifier) {
                 AppNavHost(
                     navController = navController,
                     startDestination = startDestination,
+                    viewModel = viewModel,
                     modifier = Modifier.fillMaxSize()
                 )
             }

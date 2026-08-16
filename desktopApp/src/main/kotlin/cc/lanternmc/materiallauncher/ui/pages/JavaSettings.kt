@@ -44,6 +44,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -55,14 +56,17 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun JavaSettingsPage(navController: NavHostController) {
-    val javaList = listOf("17.0", "21.0", "25.0", "1.8.0")    // 临时
+fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerViewModel) {
+    //val javaList = listOf("17.0", "21.0", "25.0", "1.8.0")    // 临时
+    val javaList by viewModel.javaList.collectAsState()
 
     var rangeSliderPosition by remember { mutableStateOf(0f..4096f) }    // 范围内存滑块
     var sliderPosition by remember { mutableFloatStateOf(4096f) }   // 内存滑块
@@ -116,7 +120,7 @@ fun JavaSettingsPage(navController: NavHostController) {
                                 ) {
                                     // 文本框
                                     TextField(
-                                        value = selectedJava,
+                                        value = "${selectedJava.javaType} ${selectedJava.version}: ${selectedJava.path}",
                                         onValueChange = {},
                                         readOnly = true,
                                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isJavaSelectionExpanded) },
@@ -130,7 +134,7 @@ fun JavaSettingsPage(navController: NavHostController) {
                                     ) {
                                         javaList.forEach { java ->
                                             DropdownMenuItem(
-                                                text = { Text(java) },
+                                                text = { Text("${java.javaType} ${java.version}: ${java.path}") },
                                                 onClick = {
                                                     selectedJava = java
                                                     isJavaSelectionExpanded = false
