@@ -23,14 +23,22 @@ import cc.lanternmc.materiallauncher.api.GameInstance
 import cc.lanternmc.materiallauncher.core.util.Logger
 import cc.lanternmc.materiallauncher.core.util.Toml
 
-/** instances.toml 多实例持久化：[[instance]] 数组表。 */
+/**
+ * instances.toml 多实例持久化：
+ *   [[instance]]           强类型字段（name/version/gameDir/java/maxMemory/jvmArgs/...）
+ *   [[instance_extra]]     String→String KV 扩展（extras）
+ *
+ * extras 以独立数组表 `[[instance_extra]]` 持久化（每行带 `instance_id` 引用），
+ * 避免在 `[[instance]]` 内嵌子表带来的 TOML 兼容性问题（数组表内不允许子表）。
+ */
 class InstanceStore(private val path: String) {
 
     fun load(): List<GameInstance> {
         val file = File(path)
         if (!file.isFile) return emptyList()
         val doc = runCatching { Toml.parse(file.readText()) }.getOrNull() ?: return emptyList()
-        return doc.section("instance").items.mapNotNull { item ->
+
+        val instances = doc.section("instance").items.mapNotNull { item ->
             val id = item["id"] ?: return@mapNotNull null
             GameInstance(
                 id = id,
@@ -42,7 +50,16 @@ class InstanceStore(private val path: String) {
                 jvmArgs = item["jvm_args"].orEmpty(),
                 createdAt = item["created_at"].orEmpty(),
                 lastLaunched = item["last_launched"].orEmpty(),
+                extras = emptyMap(),
             )
+        }
+        val extrasByInstance = doc.section("instance_extra").items
+            .groupBy { it["instance_id"].orEmpty() }
+            .mapValues { entry -> entry.value.associate { it["key"].orEmpty() to it["value"].orEmpty() } }
+
+        return instances.map { inst ->
+            val merged = extrasByInstance[inst.id].orEmpty()
+            if (merged.isEmpty()) inst else inst.copy(extras = merged)
         }
     }
 
@@ -62,6 +79,13 @@ class InstanceStore(private val path: String) {
                 appendLine("jvm_args = ${Toml.quote(instance.jvmArgs)}")
                 appendLine("created_at = ${Toml.quote(instance.createdAt)}")
                 appendLine("last_launched = ${Toml.quote(instance.lastLaunched)}")
+                for ((k, v) in instance.extras) {
+                    appendLine()
+                    appendLine("[[instance_extra]]")
+                    appendLine("instance_id = ${Toml.quote(instance.id)}")
+                    appendLine("key = ${Toml.quote(k)}")
+                    appendLine("value = ${Toml.quote(v)}")
+                }
             }
         }
         File(path).parentFile?.mkdirs()
