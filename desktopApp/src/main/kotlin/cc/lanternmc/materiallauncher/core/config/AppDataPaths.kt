@@ -101,7 +101,14 @@ object AppDataPathsResolver {
     }
 
     private fun executableDir(): String? = runCatching {
-            AppPathUtils.getAppDir().takeIf { it.exists() }?.absolutePath
+            // 必须确实是 launcher 安装目录：含 launcher 主 exe 或 jpackage 风格的 app/ 子目录
+            val candidate = AppPathUtils.getAppDir()
+            val hasLauncherExe = candidate.listFiles()?.any { f ->
+                f.isFile && f.name.endsWith(".exe") && f.name.lowercase().contains("materiallauncher")
+            } == true
+            val isJpackageAppDir = candidate.isDirectory && File(candidate, "app").isDirectory
+            // 测试/IDE 环境下 candidate 是 build/classes 等非 launcher 目录，需要 APPData 兜底
+            if (hasLauncherExe || isJpackageAppDir) candidate.absolutePath else null
         }.getOrNull()
 
     private fun userConfigDir(): String {
