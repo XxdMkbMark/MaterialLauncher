@@ -25,7 +25,7 @@ import kotlinx.coroutines.flow.SharedFlow
  * suspend 方法会被阻塞在后台线程执行，不会卡住 UI。
  */
 interface LauncherApi {
-    // ---- 配置（分层：launcher / global / instance extras） ----
+    // 配置
     suspend fun getDownloadConfig(): DownloadConfig
     suspend fun saveDownloadConfig(config: DownloadConfig)
     suspend fun getDefaultMinecraftDir(): String
@@ -41,15 +41,15 @@ interface LauncherApi {
      */
     fun setDataDirectory(dir: String): Boolean
 
-    // ---- 启动器本体配置（launcher.toml：主题 / 语言 / 下载默认值） ----
+    // 启动器本体配置（launcher.toml：主题 / 语言 / 下载默认值）
     suspend fun getLauncherSettings(): LauncherSettings
     suspend fun saveLauncherSettings(settings: LauncherSettings)
 
-    // ---- 全局启动默认值（global.toml：跨实例共享的 Java / 内存 / JVM 参数等） ----
+    // 全局启动默认值（global.toml：跨实例共享的 Java / 内存 / JVM 参数等）
     suspend fun getGlobalSettings(): GlobalLaunchSettings
     suspend fun saveGlobalSettings(settings: GlobalLaunchSettings)
 
-    // ---- 实例 extras KV（mod / 整合包 / modloader 等扩展字段） ----
+    // 实例 extras KV（mod / 整合包 / modloader 等扩展字段）
     /** 读取指定实例的 extras 单个键；实例不存在或键不存在时返回 null。 */
     suspend fun getInstanceExtra(instanceId: String, key: String): String?
 
