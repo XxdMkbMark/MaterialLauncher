@@ -17,6 +17,7 @@
 package cc.lanternmc.materiallauncher.core.config
 
 import java.io.File
+import cc.lanternmc.materiallauncher.core.util.AppPathUtils
 import cc.lanternmc.materiallauncher.core.util.Os
 import cc.lanternmc.materiallauncher.core.util.currentOs
 
@@ -100,12 +101,8 @@ object AppDataPathsResolver {
     }
 
     private fun executableDir(): String? = runCatching {
-        val cp = System.getProperty("java.class.path")
-        cp.split(File.pathSeparator)
-            .firstOrNull { it.isNotBlank() && !it.endsWith(".jar") }
-            ?.let { File(it).absoluteFile.parentFile?.absolutePath }
-            ?: File(cp).absoluteFile.parentFile?.absolutePath
-    }.getOrNull()
+            AppPathUtils.getAppDir().takeIf { it.exists() }?.absolutePath
+        }.getOrNull()
 
     private fun userConfigDir(): String {
         val home = System.getProperty("user.home") ?: "."
