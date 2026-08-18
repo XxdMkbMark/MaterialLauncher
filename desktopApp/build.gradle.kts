@@ -31,12 +31,12 @@ dependencies {
     implementation(libs.kotlinx.serializationJson)
     implementation(libs.commons.compress)
     implementation(libs.compose.uiToolingPreview)
-    implementation("org.jetbrains.androidx.navigation:navigation-compose:2.9.2")
+    implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.material3.desktop)
 
     testImplementation(libs.kotlin.testJunit)
     testImplementation(libs.junit)
-    implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
+    implementation(libs.androidx.lifecycle.viewmodelCompose)
 }
 
 compose.desktop {
