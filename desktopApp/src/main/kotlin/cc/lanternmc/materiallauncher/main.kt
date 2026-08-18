@@ -20,16 +20,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import cc.lanternmc.materiallauncher.core.LauncherBackend
-import cc.lanternmc.materiallauncher.ui.App
+import cc.lanternmc.materiallauncher.ui.Home
 
 fun main() = application {
-    val backend = LauncherBackend()
     Window(
         onCloseRequest = ::exitApplication,
         title = "Material Launcher",
         state = rememberWindowState(width = 1032.dp, height = 617.dp),
+        resizable = false
     ) {
-        App(backend)
+        Home()
     }
 }

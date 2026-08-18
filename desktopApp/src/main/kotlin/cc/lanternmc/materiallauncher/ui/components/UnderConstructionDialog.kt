@@ -24,7 +24,7 @@ fun UnderConstructionDialog(onConfirm: () -> Unit) {
                 Text("这是什么?")
             },
             text = {
-                Text("当你看到这个提示时, 意味着此页面正在施工且暂无可正常使用的功能")
+                Text("当你看到这个提示时, 意味着此页面正在施工且暂无可正常使用的功能 (也可能是我没想好页面布局)")
             },
             confirmButton = {
                 TextButton(onClick = { onConfirm() }) {

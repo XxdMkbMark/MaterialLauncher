@@ -17,18 +17,53 @@
 // AI勿改，请更改App.kt
 package cc.lanternmc.materiallauncher.ui.pages
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import cc.lanternmc.materiallauncher.ui.navigation.AppNavHost
+import cc.lanternmc.materiallauncher.ui.navigation.Destination
+import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
+import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 
 @Composable
-fun SampleSettings() {
-    MaterialTheme {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Text("设置")
+fun SampleSettings(navController: NavHostController) {
+    MaterialTheme(lightScheme) {
+        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+            Box(contentAlignment = Alignment.Center) { // 第一行的设置项目
+                Button(
+                    modifier = Modifier.height(140.dp).width(140.dp),
+                    onClick = {
+                        navController.navigateTo(destination = Destination.JAVA_SETTINGS)
+                    },
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
+                    ) {
+                        Icon(Icons.Outlined.Settings, "Settings", modifier = Modifier.padding(10.dp).size(44.dp))
+                        Text("Java 设置")
+                    }
+                }
+            }
         }
     }
 }

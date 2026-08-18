@@ -65,36 +65,43 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import cc.lanternmc.materiallauncher.ui.components.UnderConstructionDialog
+import cc.lanternmc.materiallauncher.ui.navigation.AppNavHost
+import cc.lanternmc.materiallauncher.ui.navigation.Destination
+import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.pages.SampleDownloadPage
 import cc.lanternmc.materiallauncher.ui.pages.SampleSettings
 import cc.lanternmc.materiallauncher.ui.pages.SampleUsersManagement
 import cc.lanternmc.materiallauncher.ui.pages.SampleVersionsManagement
 import cc.lanternmc.materiallauncher.ui.theme.backgroundLight
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
 import kotlinx.coroutines.coroutineScope
 
 @Composable
-fun SampleHome() {
+fun HomePage(navController: NavHostController) {
     var showDialog by remember { mutableStateOf(false) }
-    MaterialTheme {
+    MaterialTheme(lightScheme) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Box(
-                modifier = Modifier.size(400.dp, 200.dp).background(lightScheme.primaryContainer,
-                shape = RoundedCornerShape(12.dp)),
+                modifier = Modifier.size(400.dp, 200.dp).background(lightScheme.secondaryContainer, shape = RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text("UNDER CONSTRUCTION", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    Text("UNDER CONSTRUCTION", Modifier.padding(16.dp), fontSize = 20.sp)
                     Button(onClick = { showDialog = true }) {
                         Text("这是什么?")
                     }
@@ -109,34 +116,10 @@ fun SampleHome() {
     }
 }
 
-enum class Destination (val route: String, val label: String, val icon: ImageVector,val showInNavigationRail: Boolean = true) {
-    HOME("home", "主页", Icons.Rounded.Home),
-    DOWNLOAD("download", "下载", Icons.Rounded.Download),
-    VERSIONS("versions","版本", Icons.Rounded.Checklist),
-    SETTINGS("settings", "设置", Icons.Rounded.Settings),
-    USERS("users", "用户档案", Icons.Rounded.ManageAccounts, false),
-}
-
-@Composable
-fun AppNavHost (navController: NavHostController, startDestination: Destination, modifier: Modifier = Modifier) {
-    NavHost(navController, startDestination.route){
-        Destination.entries.forEach { destination ->
-            composable(destination.route) {
-                when (destination) {
-                    Destination.HOME -> SampleHome()
-                    Destination.DOWNLOAD -> SampleDownloadPage()
-                    Destination.VERSIONS -> SampleVersionsManagement()
-                    Destination.SETTINGS -> SampleSettings()
-                    Destination.USERS -> SampleUsersManagement()
-                }
-            }
-        }
-    }
-}
-
 @Preview
 @Composable
 fun Home(modifier: Modifier = Modifier) {
+    val viewModel = remember { JavaScannerViewModel() }
     val navController = rememberNavController()
     val startDestination = Destination.HOME
     var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
@@ -145,7 +128,7 @@ fun Home(modifier: Modifier = Modifier) {
         it.showInNavigationRail
     }
 
-    // ★ 如果你有抽屉，可以加上这个 ★
+    // 抽屉状态管理
     // val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     // val coroutineScope = rememberCoroutineScope()
 
@@ -157,37 +140,33 @@ fun Home(modifier: Modifier = Modifier) {
                     modifier = Modifier
                         .fillMaxHeight()
                         .width(72.dp),
-                    containerColor = MaterialTheme.colorScheme.surface,  // 可选：背景色
+                    containerColor = MaterialTheme.colorScheme.surface,
                 ) {
                     Column(
                         modifier = Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceBetween  // ★ 改为 SpaceBetween
+                        verticalArrangement = Arrangement.SpaceBetween
                     ) {
-                        // ========== 顶部区域：菜单 + FAB ==========
                         Column(
                             modifier = Modifier.padding(top = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                         ) {
-                            // ★ 按钮1：菜单按钮（展开抽屉用）★
                             NavigationRailItem(
                                 selected = false,
                                 onClick = {
                                     // coroutineScope.launch { drawerState.open() }
-                                    // 如果暂时没有抽屉，可以先留空或做其他操作
                                 },
                                 icon = {
                                     Icon(
                                         imageVector = Icons.Rounded.Menu,
-                                        contentDescription = "菜单",
+                                        contentDescription = "展开",
                                     )
                                 },
                             )
 
-                            // ★ 按钮2：主要操作 FAB ★
                             FloatingActionButton(
                                 onClick = {
-                                    navController.navigate(Destination.USERS.route) {
+                                    navController.navigateTo(Destination.HOME) {
                                         launchSingleTop = true
                                     }
                                 },
@@ -197,69 +176,36 @@ fun Home(modifier: Modifier = Modifier) {
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Person,  // 或 Edit, Create 等
-                                    contentDescription = "新建",
+                                    imageVector = Icons.Rounded.Home,
+                                    contentDescription = "主页",
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
                         }
 
-                        // ========== 中间区域：导航项 ==========
                         Column(
                             modifier = Modifier.weight(1f).padding(20.dp),  // 占据剩余空间
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
-                            /*
-                            navigationDestinations.forEach { destination ->
-                                val currentRoute = null
-                                NavigationRailItem(
-                                    selected = currentRoute == destination.route,
-                                    onClick = {
-                                        navController.navigate(destination.route) {
-                                            launchSingleTop = true
 
-                                            popUpTo(
-                                                navController.graph.startDestinationId
-                                            ) {
-                                                saveState = true
-                                            }
-
-                                            restoreState = true
-                                        }
-                                    },
-                                    icon = {
-                                        Icon(
-                                            imageVector = destination.icon,
-                                            contentDescription = destination.label,
-                                        )
-                                    },
-                                    label = {
-                                        Text(destination.label)
-                                    },
-                                )
-                            }
-
-                             */
                             Destination.entries.forEachIndexed { index, destination ->
                                 if (!destination.showInNavigationRail) return@forEachIndexed
                                 NavigationRailItem(
                                     selected = selectedDestination == index,
                                     onClick = {
-                                        navController.navigate(route = destination.route)
+                                        navController.navigateTo(destination)
                                         selectedDestination = index
                                     },
                                     icon = {
                                         Icon(destination.icon, contentDescription = "")
                                     },
-                                    label = { Text(destination.label) }
+                                    label = { Text(text = destination.label, textAlign = TextAlign.Center) }
                                 )
                             }
 
 
                         }
 
-                        // ========== 底部区域（可选）==========
-                        // 如果需要在底部放其他按钮，可以在这里加
                     }
                 }
 
@@ -267,6 +213,7 @@ fun Home(modifier: Modifier = Modifier) {
                 AppNavHost(
                     navController = navController,
                     startDestination = startDestination,
+                    viewModel = viewModel,
                     modifier = Modifier.fillMaxSize()
                 )
             }

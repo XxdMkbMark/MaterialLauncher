@@ -36,6 +36,7 @@ dependencies {
 
     testImplementation(libs.kotlin.testJunit)
     testImplementation(libs.junit)
+    implementation("org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-compose:2.8.0")
 }
 
 compose.desktop {
