@@ -119,7 +119,7 @@ Used for two purposes, in any combination:
 
 Below are the exact commit-message templates this project uses. Use them verbatim.
 
-### 7.1 Routine dependency upgrade (no behaviour change)
+### 7.1 Routine dependency upgrade (no behavior change)
 
 ```
 chore: bump <lib> <old> -> <new>
@@ -155,7 +155,7 @@ Example:
 chore: remove unused navigationRuntimeDesktop version ref
 ```
 
-### 7.4 Pure code refactor (zero behaviour change)
+### 7.4 Pure code refactor (zero behavior change)
 
 Use `<scope>` of the module most touched; omit it if the refactor spans modules.
 
@@ -189,7 +189,7 @@ fresh downloads; APPEND only on real 206 resume.
 ### 7.6 New feature
 
 ```
-feat(<scope>): <user-visible behaviour>
+feat(<scope>): <user-visible behavior>
 ```
 
 Example:
