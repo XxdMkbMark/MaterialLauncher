@@ -29,7 +29,7 @@ object RuntimeInfo {
         val bytes = runCatching {
             val bean = ManagementFactory.getOperatingSystemMXBean()
             if (bean is com.sun.management.OperatingSystemMXBean) {
-                bean.totalPhysicalMemorySize
+                bean.totalMemorySize
             } else {
                 -1L
             }

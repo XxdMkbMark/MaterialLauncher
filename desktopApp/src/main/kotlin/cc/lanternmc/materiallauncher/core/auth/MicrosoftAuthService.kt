@@ -101,8 +101,7 @@ object MicrosoftAuthService {
                 ),
             )
             val doc = runCatching { json.parseToJsonElement(result.body).jsonObject }.getOrNull()
-            val error = doc?.get("error")?.jsonPrimitive?.content
-            when (error) {
+            when (val error = doc?.get("error")?.jsonPrimitive?.content) {
                 null, "", "authorization_pending" -> {
                     val accessToken = doc?.get("access_token")?.jsonPrimitive?.content
                     if (!accessToken.isNullOrBlank()) {
@@ -137,7 +136,7 @@ object MicrosoftAuthService {
                         put("RpsTicket", "d=$msAccessToken")
                     },
                 )
-                put("RelyingParty", "http://auth.xboxlive.com")
+                put("RelyingParty", "https://auth.xboxlive.com")
                 put("TokenType", "JWT")
             }.toString(),
         )
