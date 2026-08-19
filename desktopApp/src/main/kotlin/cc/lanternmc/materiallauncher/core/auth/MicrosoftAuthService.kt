@@ -158,16 +158,16 @@ object MicrosoftAuthService {
             }.toString(),
         )
         val xsts = json.decodeFromString<XstsResponse>(xstsResp)
-        val uhs = xsts.DisplayClaims.xui.firstOrNull()?.uhs
+        val uhs = xsts.displayClaims.xui.firstOrNull()?.uhs
             ?: throw IllegalStateException("XSTS 未返回用户标识 (uhs)")
 
         val mcResp = HttpUtil.postJson(
             MINECRAFT_AUTH_URL,
-            buildJsonObject { put("identityToken", "XBL3.0 x=$uhs;${xsts.Token}") }.toString(),
+            buildJsonObject { put("identityToken", "XBL3.0 x=$uhs;${xsts.token}") }.toString(),
         )
         val mc = json.decodeFromString<MinecraftLoginResponse>(mcResp)
 
-        val profileResp = HttpUtil.getResult(PROFILE_URL, mapOf("Authorization" to "Bearer ${mc.access_token}"))
+        val profileResp = HttpUtil.getResult(PROFILE_URL, mapOf("Authorization" to "Bearer ${mc.accessToken}"))
         if (profileResp.statusCode == 403) {
             throw IllegalStateException("该账户未拥有 Minecraft Java 版")
         }
@@ -181,11 +181,11 @@ object MicrosoftAuthService {
             type = "online",
             username = profile.name,
             uuid = profile.id,
-            accessToken = mc.access_token,
+            accessToken = mc.accessToken,
             userType = "msa",
             msToken = msAccessToken,
             refreshToken = msRefreshToken,
-            msExpiresAt = System.currentTimeMillis() + mc.expires_in * 1000,
+            msExpiresAt = System.currentTimeMillis() + mc.expiresIn  * 1000,
             lastRefreshed = OffsetDateTime.now().toString(),
         )
     }
