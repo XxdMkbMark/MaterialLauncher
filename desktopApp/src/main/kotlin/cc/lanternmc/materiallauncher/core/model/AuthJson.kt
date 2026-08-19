@@ -16,6 +16,7 @@
  */
 package cc.lanternmc.materiallauncher.core.model
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 /**
@@ -24,14 +25,20 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class XboxAuthResponse(
-    val Token: String = "",
-    val DisplayClaims: XboxDisplayClaims = XboxDisplayClaims(),
+    @SerialName("Token")
+    val token: String = "",
+
+    @SerialName("DisplayClaims")
+    val displayClaims: XboxDisplayClaims = XboxDisplayClaims(),
 )
 
 @Serializable
 data class XstsResponse(
-    val Token: String = "",
-    val DisplayClaims: XboxDisplayClaims = XboxDisplayClaims(),
+    @SerialName("Token")
+    val token: String = "",
+
+    @SerialName("DisplayClaims")
+    val displayClaims: XboxDisplayClaims = XboxDisplayClaims(),
 )
 
 @Serializable
@@ -46,8 +53,12 @@ data class XboxUserHash(
 
 @Serializable
 data class MinecraftLoginResponse(
-    val access_token: String = "",
-    val expires_in: Long = 0,
+    @SerialName("access_token")
+    val accessToken: String = "",
+
+    @SerialName("expires_in")
+    val expiresIn: Long = 0,
+
     val username: String = "",
 )
 

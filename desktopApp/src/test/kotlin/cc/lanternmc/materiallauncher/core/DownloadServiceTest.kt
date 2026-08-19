@@ -5,7 +5,6 @@
 package cc.lanternmc.materiallauncher.core.download
 
 import cc.lanternmc.materiallauncher.core.launch.OptionsSanitizer
-import cc.lanternmc.materiallauncher.core.createTempDir
 import cc.lanternmc.materiallauncher.core.model.ClientDownloads
 import cc.lanternmc.materiallauncher.core.model.VersionJson
 import cc.lanternmc.materiallauncher.core.model.XboxAuthResponse
@@ -106,7 +105,7 @@ class MinecraftModelSerializationTest {
             {"Token":"t0ken","DisplayClaims":{"xui":[{"uhs":"userhash123"}]}}
         """.trimIndent()
         val resp = json.decodeFromString<XboxAuthResponse>(raw)
-        assertEquals("t0ken", resp.Token)
-        assertEquals("userhash123", resp.DisplayClaims.xui.first().uhs)
+        assertEquals("t0ken", resp.token)
+        assertEquals("userhash123", resp.displayClaims.xui.first().uhs)
     }
 }

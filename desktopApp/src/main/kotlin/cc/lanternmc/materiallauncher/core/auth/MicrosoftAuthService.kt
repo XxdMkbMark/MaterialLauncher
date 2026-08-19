@@ -141,7 +141,7 @@ object MicrosoftAuthService {
             }.toString(),
         )
         val xbox = json.decodeFromString<XboxAuthResponse>(xboxResp)
-        if (xbox.Token.isBlank()) throw IllegalStateException("Xbox Live 认证失败")
+        if (xbox.token.isBlank()) throw IllegalStateException("Xbox Live 认证失败")
 
         val xstsResp = HttpUtil.postJson(
             XSTS_AUTH_URL,
@@ -150,7 +150,7 @@ object MicrosoftAuthService {
                     "Properties",
                     buildJsonObject {
                         put("SandboxId", "RETAIL")
-                        put("UserTokens", buildJsonArray { add(JsonPrimitive(xbox.Token)) })
+                        put("UserTokens", buildJsonArray { add(JsonPrimitive(xbox.token)) })
                     },
                 )
                 put("RelyingParty", "rp://api.minecraftservices.com/")
