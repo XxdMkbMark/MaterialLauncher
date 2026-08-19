@@ -49,8 +49,7 @@ class GameProcessManager {
     fun list(): List<RunningGameInfo> {
         val result = mutableListOf<RunningGameInfo>()
         for ((pid, process) in processes) {
-            val m = meta[pid]
-            if (m == null) continue
+            val m = meta[pid] ?: continue
             result.add(
                 RunningGameInfo(
                     pid = pid,

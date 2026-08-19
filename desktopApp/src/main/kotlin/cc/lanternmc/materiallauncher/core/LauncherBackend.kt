@@ -69,6 +69,7 @@ import cc.lanternmc.materiallauncher.core.launch.LauncherException
 import cc.lanternmc.materiallauncher.core.launch.LaunchService
 import cc.lanternmc.materiallauncher.core.model.ClientArtifact
 import cc.lanternmc.materiallauncher.core.model.VersionJson
+import cc.lanternmc.materiallauncher.core.util.AppPathUtils.defaultMinecraftDir
 import cc.lanternmc.materiallauncher.core.util.ArchiveExtractor
 import cc.lanternmc.materiallauncher.core.util.HttpUtil
 import cc.lanternmc.materiallauncher.core.util.Logger
@@ -154,7 +155,7 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
     }
 
     override suspend fun getDefaultMinecraftDir(): String = withContext(Dispatchers.IO) {
-        configStore.defaultMinecraftDir()
+        defaultMinecraftDir()
     }
 
     override suspend fun getLauncherMinecraftDir(): String = withContext(Dispatchers.IO) {
@@ -312,7 +313,7 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
     }
 
     override fun cancelDownload(taskKey: String) {
-        activeDownloads.remove(taskKey)?.let { it.cancel() }
+        activeDownloads.remove(taskKey)?.cancel()
     }
 
     /**
@@ -645,7 +646,7 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
 
     companion object {
         /** token 剩余有效期低于该值即视为"即将过期"，触发自动续期。 */
-        internal val TOKEN_RENEW_LEAD = 5 * 60 * 1000L
+        internal const val TOKEN_RENEW_LEAD = 5 * 60 * 1000L
 
         /** client jar 最大下载尝试次数。 */
         private const val CLIENT_DOWNLOAD_ATTEMPTS = 3
