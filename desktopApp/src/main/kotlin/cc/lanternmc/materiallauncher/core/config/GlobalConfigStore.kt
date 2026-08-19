@@ -18,10 +18,9 @@ package cc.lanternmc.materiallauncher.core.config
 
 import java.io.File
 import cc.lanternmc.materiallauncher.api.GlobalLaunchSettings
+import cc.lanternmc.materiallauncher.core.util.AppPathUtils.defaultMinecraftDir
 import cc.lanternmc.materiallauncher.core.util.Logger
-import cc.lanternmc.materiallauncher.core.util.Os
 import cc.lanternmc.materiallauncher.core.util.Toml
-import cc.lanternmc.materiallauncher.core.util.currentOs
 
 /**
  * global.toml：跨实例共享的全局启动默认值。
@@ -75,12 +74,6 @@ class GlobalConfigStore(private val path: String) {
     }.getOrElse {
         Logger.error("保存 global.toml 失败: ${it.message}")
         false
-    }
-
-    fun defaultMinecraftDir(): String = when (currentOs) {
-        Os.WINDOWS -> System.getenv("APPDATA")?.let { File(it, ".minecraft").absolutePath }.orEmpty()
-        Os.MAC -> File(System.getProperty("user.home") ?: "", "Library/Application Support/minecraft").absolutePath
-        else -> File(System.getProperty("user.home") ?: "", ".minecraft").absolutePath
     }
 
     fun defaults(): GlobalLaunchSettings = GlobalLaunchSettings(

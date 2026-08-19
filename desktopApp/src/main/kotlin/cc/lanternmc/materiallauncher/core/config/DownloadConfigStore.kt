@@ -19,22 +19,14 @@ package cc.lanternmc.materiallauncher.core.config
 import java.io.File
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.DownloadPathConfig
+import cc.lanternmc.materiallauncher.core.util.AppPathUtils.defaultMinecraftDir
 import cc.lanternmc.materiallauncher.core.util.Logger
-import cc.lanternmc.materiallauncher.core.util.Os
 import cc.lanternmc.materiallauncher.core.util.Toml
-import cc.lanternmc.materiallauncher.core.util.currentOs
 
 /**
  * download.toml 配置的读写。
  */
 class DownloadConfigStore(private val paths: AppDataPaths) {
-
-    fun defaultMinecraftDir(): String = when (currentOs) {
-        Os.WINDOWS -> System.getenv("APPDATA")?.let { File(it, ".minecraft").absolutePath }.orEmpty()
-        Os.MAC -> File(System.getProperty("user.home") ?: "", "Library/Application Support/minecraft").absolutePath
-        else -> File(System.getProperty("user.home") ?: "", ".minecraft").absolutePath
-    }
-
     fun launcherMinecraftDir(): String = File(paths.directory, "minecraft").absolutePath
 
     fun launcherJavaDir(): String = File(paths.directory, "java").absolutePath

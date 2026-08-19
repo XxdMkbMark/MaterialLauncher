@@ -17,7 +17,10 @@
 package cc.lanternmc.materiallauncher.core.util
 
 import java.io.File
+import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.Path
+import kotlin.io.path.absolutePathString
 
 /**
  * 启动器自身路径解析工具。
@@ -67,4 +70,12 @@ object AppPathUtils {
             // 策略 3: IDE 本地开发兜底 (当前工作目录)
             ?: File(System.getProperty("user.dir")).absoluteFile
     }
+    private val userHome: Path get() = Path(System.getProperty("user.home").orEmpty())
+
+    fun defaultMinecraftDir(): String = when (currentOs) {
+        Os.WINDOWS -> (System.getenv("APPDATA")?.let(::Path) ?: userHome.resolve("AppData/Roaming"))
+            .resolve(".minecraft")
+        Os.MAC -> userHome.resolve("Library/Application Support/minecraft")
+        else -> userHome.resolve(".minecraft")
+    }.absolutePathString()
 }
