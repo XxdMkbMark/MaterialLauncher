@@ -27,6 +27,27 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream
  */
 object ArchiveExtractor {
 
+    private fun writeArchiveEntry(
+        rawName: String,
+        isDirectory: Boolean,
+        destDir: String,
+        topDir: String?,
+        writeContent: (File) -> Unit,
+    ) {
+        val name = rawName.replace('\\', '/').let {
+            if (topDir != null && it.startsWith("$topDir/")) it.removePrefix("$topDir/") else it
+        }
+        if (name.isEmpty() || name == topDir) return
+        val target = safeJoin(destDir, name)?.let(::File) ?: return
+
+        if (isDirectory) {
+            target.mkdirs()
+        } else {
+            target.parentFile?.mkdirs()
+            writeContent(target)
+        }
+    }
+
     /**
      * 从 native jar 中提取原生库到目标目录（跳过 META-INF 与指定 exclude）。
      */
@@ -64,22 +85,13 @@ object ArchiveExtractor {
     private fun extractZip(archivePath: String, destDir: String) {
         val topDir = firstZipTopDir(archivePath)
         ZipFile(archivePath).use { zip ->
-            for (entry in zip.entries()) {
-                // TODO Fix the repeated code segments
-                var name = entry.name.replace('\\', '/')
-                if (topDir != null) {
-                    if (name == topDir) continue
-                    if (name.startsWith("$topDir/")) name = name.removePrefix("$topDir/")
-                }
-                if (name.isEmpty()) continue
-                val target = safeJoin(destDir, name) ?: continue
-                if (entry.isDirectory) {
-                    File(target).mkdirs()
-                    continue
-                }
-                File(target).parentFile?.mkdirs()
-                zip.getInputStream(entry).use { input ->
-                    File(target).outputStream().use { output -> input.copyTo(output) }
+            val entries = zip.entries()
+            while (entries.hasMoreElements()) {
+                val entry = entries.nextElement()
+                writeArchiveEntry(entry.name, entry.isDirectory, destDir, topDir) { file ->
+                    zip.getInputStream(entry).use { input ->
+                        file.outputStream().use { out -> input.copyTo(out) }
+                    }
                 }
             }
         }
@@ -90,22 +102,12 @@ object ArchiveExtractor {
         FileInputStream(archivePath).use { fileInput ->
             GzipCompressorInputStream(fileInput).use { gzip ->
                 TarArchiveInputStream(gzip).use { tar ->
-                    while (true) {
-                        val entry = tar.nextEntry ?: break
-                        // TODO Fix the repeated code segments
-                        var name = entry.name.replace('\\', '/')
-                        if (topDir != null) {
-                            if (name == topDir) continue
-                            if (name.startsWith("$topDir/")) name = name.removePrefix("$topDir/")
+                    var entry = tar.nextEntry
+                    while (entry != null) {
+                        writeArchiveEntry(entry.name, entry.isDirectory, destDir, topDir) { file ->
+                            file.outputStream().use { out -> tar.copyTo(out) }
                         }
-                        if (name.isEmpty()) continue
-                        val target = safeJoin(destDir, name) ?: continue
-                        if (entry.isDirectory) {
-                            File(target).mkdirs()
-                            continue
-                        }
-                        File(target).parentFile?.mkdirs()
-                        File(target).outputStream().use { output -> tar.copyTo(output) }
+                        entry = tar.nextEntry
                     }
                 }
             }
