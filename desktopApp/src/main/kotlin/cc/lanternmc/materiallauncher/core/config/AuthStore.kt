@@ -19,6 +19,7 @@ package cc.lanternmc.materiallauncher.core.config
 import java.io.File
 import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.core.util.Toml
+import cc.lanternmc.materiallauncher.core.util.upsert
 
 /**
  * auth.toml 多账户持久化。
@@ -76,9 +77,7 @@ class AuthStore(private val path: String) {
     }
 
     fun add(account: Account): List<Account> {
-        val accounts = load().toMutableList()
-        val idx = accounts.indexOfFirst { it.id == account.id }
-        if (idx >= 0) accounts[idx] = account else accounts.add(account)
+        val accounts = load().toMutableList().upsert(account) { it.id == account.id }
         save(accounts)
         return accounts
     }

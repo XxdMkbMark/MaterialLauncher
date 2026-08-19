@@ -21,6 +21,7 @@ import java.time.OffsetDateTime
 import java.util.UUID
 import cc.lanternmc.materiallauncher.api.GameInstance
 import cc.lanternmc.materiallauncher.core.util.Toml
+import cc.lanternmc.materiallauncher.core.util.upsert
 
 /**
  * instances.toml 多实例持久化：
@@ -94,9 +95,7 @@ class InstanceStore(private val path: String) {
     }
 
     fun add(instance: GameInstance): List<GameInstance> {
-        val instances = load().toMutableList()
-        val idx = instances.indexOfFirst { it.id == instance.id }
-        if (idx >= 0) instances[idx] = instance else instances.add(instance)
+        val instances = load().toMutableList().upsert(instance) { it.id == instance.id }
         save(instances)
         return instances
     }
