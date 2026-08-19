@@ -70,16 +70,7 @@ class GlobalConfigStore(private val path: String) {
             appendLine("default_game_args = ${Toml.quote(settings.defaultGameArgs)}")
             appendLine("download_source = ${Toml.quote(settings.downloadSource)}")
         }
-        File(path).parentFile?.mkdirs()
-        val tmp = File("$path.tmp")
-        tmp.writeText(content)
-        val target = File(path)
-        if (target.exists() && !target.delete()) {
-            throw IllegalStateException("无法替换旧 global.toml")
-        }
-        if (!tmp.renameTo(target)) {
-            throw IllegalStateException("无法写入 global.toml")
-        }
+        ConfigIO.writeAtomically(File(path), content)
         true
     }.getOrElse {
         Logger.error("保存 global.toml 失败: ${it.message}")

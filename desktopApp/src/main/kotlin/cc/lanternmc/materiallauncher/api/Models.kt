@@ -180,8 +180,14 @@ data class RunningGameInfo(
  * 每个实例拥有自己的 gameDir（独立存档/设置），并锁定一个 MC 版本。
  *
  * `extras` 用于存放扩展配置（mod 路径、整合包元数据、Forge/Fabric 注入参数等）。
- * 该字段是 String→String KV 形式，新增扩展项无需修改 data class，
- * 序列化时与 TOML `[[instance]]` 中的 `extras = { ... }` 表对应。
+ * 该字段是 String→String KV 形式，新增扩展项无需修改 data class。
+ *
+ * 持久化格式：`extras` 不嵌入 `[[instance]]` 内部，而是作为独立的
+ * `[[instance_extra]]` 数组表持久化（每行带 `instance_id` / `key` / `value` 三列），
+ * 由 [cc.lanternmc.materiallauncher.core.config.InstanceStore] 在加载时按
+ * `instance_id` 反向归并回对应的 [GameInstance.extras]。这种布局是因为 TOML
+ * 规范禁止在数组表内部再嵌套子表；将 extras 拍平为同级的 `[[instance_extra]]`
+ * 既保留了 KV 扩展能力，又对外部解析器友好。
  */
 @Serializable
 data class GameInstance(
