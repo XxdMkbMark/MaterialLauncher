@@ -29,8 +29,8 @@ import cc.lanternmc.materiallauncher.core.util.Toml
  *   - 旧文件不存在：什么都不做
  *   - 旧文件存在但 global.toml 已存在：不重复迁移，直接把旧文件改名归档
  *     （保护用户已在 global.toml 中手动调整过的内容不被覆盖）
- *   - 旧文件存在且 global.toml 不存在：解析旧分区 [minecraft] / [java] /
- *     [account] / [download] / [launch]，字段映射为新的扁平 KV，写入 global.toml，
+ *   - 旧文件存在且 global.toml 不存在：解析旧分区 minecraft / java /
+ *     account / download / launch，字段映射为新的扁平 KV，写入 global.toml，
  *     再把旧文件改名归档
  *
  * 归档就是把旧文件改名为 `config.toml.migrated`（不删除，便于回滚）。
