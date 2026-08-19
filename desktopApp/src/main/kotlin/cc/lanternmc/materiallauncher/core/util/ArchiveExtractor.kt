@@ -65,6 +65,7 @@ object ArchiveExtractor {
         val topDir = firstZipTopDir(archivePath)
         ZipFile(archivePath).use { zip ->
             for (entry in zip.entries()) {
+                // TODO Fix the repeated code segments
                 var name = entry.name.replace('\\', '/')
                 if (topDir != null) {
                     if (name == topDir) continue
@@ -91,6 +92,7 @@ object ArchiveExtractor {
                 TarArchiveInputStream(gzip).use { tar ->
                     while (true) {
                         val entry = tar.nextEntry ?: break
+                        // TODO Fix the repeated code segments
                         var name = entry.name.replace('\\', '/')
                         if (topDir != null) {
                             if (name == topDir) continue

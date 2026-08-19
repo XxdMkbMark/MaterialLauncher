@@ -255,6 +255,7 @@ object JavaFinder {
             .mapNotNull { it.toIntOrNull() }
         val pa = parts(a)
         val pb = parts(b)
+        // TODO Fix the repeated code segments
         val count = maxOf(pa.size, pb.size)
         for (i in 0 until count) {
             val va = pa.getOrElse(i) { 0 }

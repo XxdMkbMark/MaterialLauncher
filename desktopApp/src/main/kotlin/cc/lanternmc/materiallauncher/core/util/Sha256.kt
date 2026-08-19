@@ -23,6 +23,7 @@ import java.security.MessageDigest
 object Sha256 {
     fun ofFile(file: File): String {
         val digest = MessageDigest.getInstance("SHA-256")
+        // TODO Fix the repeated code segments
         file.inputStream().use { input ->
             val buffer = ByteArray(64 * 1024)
             while (true) {

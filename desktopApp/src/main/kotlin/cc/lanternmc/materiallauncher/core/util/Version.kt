@@ -24,6 +24,7 @@ fun compareMinecraftVersion(a: String, b: String): Int {
         .map { part -> part.takeWhile { it.isDigit() }.toIntOrNull() ?: 0 }
     val pa = parseParts(a)
     val pb = parseParts(b)
+    // TODO Fix the repeated code segments
     val count = maxOf(pa.size, pb.size)
     for (i in 0 until count) {
         val va = pa.getOrElse(i) { 0 }
