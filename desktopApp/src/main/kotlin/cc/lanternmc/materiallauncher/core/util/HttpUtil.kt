@@ -29,7 +29,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
-import kotlin.coroutines.coroutineContext
+import kotlin.time.Duration.Companion.milliseconds
 
 class HttpResult(val statusCode: Int, val body: String)
 
@@ -257,7 +257,7 @@ object HttpUtil {
                 if (!retryable || attempt >= MAX_RETRIES) throw e
                 attempt++
                 Logger.warn("网络请求失败，第 $attempt 次重试: ${e.message}")
-                delay(500L * attempt)
+                delay((500L * attempt).milliseconds)
             }
         }
     }
