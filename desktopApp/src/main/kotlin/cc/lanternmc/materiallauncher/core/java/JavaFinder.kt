@@ -185,6 +185,7 @@ object JavaFinder {
         return lower in skipNames
     }
 
+    @Suppress("CanConvertToMultiDollarString")
     private val skipNames = setOf(
         // 系统目录
         "\$recycle.bin", "system volume information", "windows", "windows.old",

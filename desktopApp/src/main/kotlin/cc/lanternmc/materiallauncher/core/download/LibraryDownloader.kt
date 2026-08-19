@@ -132,7 +132,7 @@ class LibraryDownloader {
         val downloads = library.downloads ?: return Pair(null, false)
         if (library.natives.isNotEmpty()) {
             val classifier = library.natives[minecraftOsName()] ?: return Pair(null, true)
-
+            @Suppress("CanConvertToMultiDollarString")
             val resolved = classifier.replace("\${arch}", minecraftArchBits())
             val artifact = downloads.classifiers[resolved] ?: return Pair(null, true)
             return Pair(artifact, true)
