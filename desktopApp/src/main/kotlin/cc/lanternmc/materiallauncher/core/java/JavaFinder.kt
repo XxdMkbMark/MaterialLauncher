@@ -30,6 +30,7 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.TimeUnit
 import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.core.util.Os
+import cc.lanternmc.materiallauncher.core.util.compareWithPaddedZero
 import cc.lanternmc.materiallauncher.core.util.currentOs
 
 /**
@@ -255,14 +256,7 @@ object JavaFinder {
             .mapNotNull { it.toIntOrNull() }
         val pa = parts(a)
         val pb = parts(b)
-        // TODO Fix the repeated code segments
-        val count = maxOf(pa.size, pb.size)
-        for (i in 0 until count) {
-            val va = pa.getOrElse(i) { 0 }
-            val vb = pb.getOrElse(i) { 0 }
-            if (va != vb) return va - vb
-        }
-        return 0
+        return pa.compareWithPaddedZero(pb)
     }
 
     private fun readJavaRelease(home: String): Map<String, String> {
