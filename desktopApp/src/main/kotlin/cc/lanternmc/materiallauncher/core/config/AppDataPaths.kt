@@ -25,6 +25,8 @@ data class AppDataPaths(
     val directory: String,
     val config: String,
     val javaIndex: String,
+    val global: String = "",
+    val launcher: String = "",
 )
 
 /**
@@ -92,6 +94,8 @@ object AppDataPathsResolver {
             directory = dir.absolutePath,
             config = File(dir, "config.toml").absolutePath,
             javaIndex = File(dir, "java-index.toml").absolutePath,
+            global = File(dir, "global.toml").absolutePath,
+            launcher = File(dir, "launcher.toml").absolutePath,
         )
         val configFile = File(paths.config)
         if (!configFile.exists()) {

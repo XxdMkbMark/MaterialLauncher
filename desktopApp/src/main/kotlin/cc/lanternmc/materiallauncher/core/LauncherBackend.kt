@@ -37,11 +37,13 @@ import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.DownloadProgress
 import cc.lanternmc.materiallauncher.api.GameInstance
+import cc.lanternmc.materiallauncher.api.GlobalLaunchSettings
 import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.api.JavaReleaseInfo
 import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.api.LauncherEventBus
+import cc.lanternmc.materiallauncher.api.LauncherSettings
 import cc.lanternmc.materiallauncher.api.LaunchRequest
 import cc.lanternmc.materiallauncher.api.MinecraftVersionEntry
 import cc.lanternmc.materiallauncher.api.RunningGameInfo
@@ -49,8 +51,11 @@ import cc.lanternmc.materiallauncher.core.auth.MicrosoftAuthService
 import cc.lanternmc.materiallauncher.core.config.AppDataPaths
 import cc.lanternmc.materiallauncher.core.config.AppDataPathsResolver
 import cc.lanternmc.materiallauncher.core.config.AuthStore
+import cc.lanternmc.materiallauncher.core.config.ConfigMigration
 import cc.lanternmc.materiallauncher.core.config.DownloadConfigStore
+import cc.lanternmc.materiallauncher.core.config.GlobalConfigStore
 import cc.lanternmc.materiallauncher.core.config.InstanceStore
+import cc.lanternmc.materiallauncher.core.config.LauncherConfigStore
 import cc.lanternmc.materiallauncher.core.download.AssetDownloader
 import cc.lanternmc.materiallauncher.core.download.DownloadMirrorSource
 import cc.lanternmc.materiallauncher.core.download.JavaVersionService
@@ -91,9 +96,13 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
             directory = file.absolutePath,
             config = File(file, "config.toml").absolutePath,
             javaIndex = File(file, "java-index.toml").absolutePath,
+            global = File(file, "global.toml").absolutePath,
+            launcher = File(file, "launcher.toml").absolutePath,
         )
     } ?: AppDataPathsResolver.resolve()
     internal val configStore = DownloadConfigStore(paths)
+    internal val globalConfigStore = GlobalConfigStore(paths.global)
+    internal val launcherConfigStore = LauncherConfigStore(paths.launcher)
     internal val authStore = AuthStore(File(paths.directory, "auth.toml").absolutePath)
     internal val instanceStore = InstanceStore(File(paths.directory, "instances.toml").absolutePath)
     private val assetDownloader = AssetDownloader()
@@ -121,6 +130,8 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
                 ),
             )
         }
+        // 旧 config.toml → global.toml 一次性迁移；幂等且自带 .migrated 备份。
+        ConfigMigration.migrateIfNeeded(paths.directory)
     }
 
     // ---------- 日志 ----------
@@ -167,6 +178,58 @@ class LauncherBackend(private val dataDirectory: String? = null) : LauncherApi, 
             Logger.warn("设置数据目录失败: $trimmed")
         }
         return ok
+    }
+
+    // ---------- 分层配置：launcher / global / instance extras ----------
+
+    override suspend fun getLauncherSettings(): LauncherSettings = withContext(Dispatchers.IO) {
+        launcherConfigStore.load()
+    }
+
+    override suspend fun saveLauncherSettings(settings: LauncherSettings) {
+        withContext(Dispatchers.IO) { launcherConfigStore.save(settings) }
+    }
+
+    override suspend fun getGlobalSettings(): GlobalLaunchSettings = withContext(Dispatchers.IO) {
+        globalConfigStore.load()
+    }
+
+    override suspend fun saveGlobalSettings(settings: GlobalLaunchSettings) {
+        withContext(Dispatchers.IO) { globalConfigStore.save(settings) }
+    }
+
+    /** 读实例 extras 中的单个键：实例不存在或键不存在均返回 null。 */
+    override suspend fun getInstanceExtra(instanceId: String, key: String): String? = withContext(Dispatchers.IO) {
+        val inst = instanceStore.load().firstOrNull { it.id == instanceId } ?: return@withContext null
+        inst.extras[key]
+    }
+
+    /** 写实例 extras 中的单个键（保留其它键）。 */
+    override suspend fun setInstanceExtra(instanceId: String, key: String, value: String) {
+        withContext(Dispatchers.IO) {
+            val instances = instanceStore.load().toMutableList()
+            val idx = instances.indexOfFirst { it.id == instanceId }
+            if (idx < 0) {
+                Logger.warn("setInstanceExtra: 未找到实例 $instanceId")
+                return@withContext
+            }
+            val updated = instances[idx].extras.toMutableMap().apply { put(key, value) }
+            instances[idx] = instances[idx].copy(extras = updated)
+            instanceStore.save(instances)
+        }
+    }
+
+    /** 删除实例 extras 中的单个键（保留其它键）。 */
+    override suspend fun removeInstanceExtra(instanceId: String, key: String) {
+        withContext(Dispatchers.IO) {
+            val instances = instanceStore.load().toMutableList()
+            val idx = instances.indexOfFirst { it.id == instanceId }
+            if (idx < 0) return@withContext
+            if (key !in instances[idx].extras) return@withContext
+            val updated = instances[idx].extras.toMutableMap().apply { remove(key) }
+            instances[idx] = instances[idx].copy(extras = updated)
+            instanceStore.save(instances)
+        }
     }
 
     // ---------- 已安装内容 ----------

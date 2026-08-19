@@ -52,6 +52,44 @@ data class DownloadConfig(
     val jvmArgs: String = "",
     /** 自定义游戏参数（空格分隔），追加到默认游戏参数之后。 */
     val gameArgs: String = "",
+    /** 默认内存（如 2048M / 4G）。 */
+    val defaultMaxMemory: String = "2048M",
+)
+
+/** 启动器本体配置（launcher.toml）：与具体实例/游戏无关的应用层选项。 */
+@Serializable
+data class LauncherSettings(
+    val ui: UiSettings = UiSettings(),
+    val download: DownloadDefaults = DownloadDefaults(),
+)
+
+@Serializable
+data class UiSettings(
+    /** 主题：light / dark / system。 */
+    val theme: String = "system",
+    /** 语言：zh-CN / en-US 等。 */
+    val language: String = "zh-CN",
+)
+
+@Serializable
+data class DownloadDefaults(
+    /** 下载源策略：auto / mirror / official。 */
+    val source: String = "auto",
+    /** asset / library 下载并发数。 */
+    val concurrency: Int = 8,
+)
+
+/** 全局游戏启动默认值（global.toml）：跨实例共享的兜底配置。 */
+@Serializable
+data class GlobalLaunchSettings(
+    val minecraftPath: String = "",
+    val javaPath: String = "",
+    val defaultAccountId: String = "",
+    val defaultUsername: String = "TestUser",
+    val defaultMaxMemory: String = "2048M",
+    val defaultJvmArgs: String = "",
+    val defaultGameArgs: String = "",
+    val downloadSource: String = "auto",
 )
 
 @Serializable
@@ -140,6 +178,10 @@ data class RunningGameInfo(
 /**
  * 游戏实例：一个独立命名的隔离游戏环境。
  * 每个实例拥有自己的 gameDir（独立存档/设置），并锁定一个 MC 版本。
+ *
+ * `extras` 用于存放扩展配置（mod 路径、整合包元数据、Forge/Fabric 注入参数等）。
+ * 该字段是 String→String KV 形式，新增扩展项无需修改 data class，
+ * 序列化时与 TOML `[[instance]]` 中的 `extras = { ... }` 表对应。
  */
 @Serializable
 data class GameInstance(
@@ -153,4 +195,6 @@ data class GameInstance(
     val jvmArgs: String = "",
     val createdAt: String = "",
     val lastLaunched: String = "",
+    /** 扩展配置：mod / 整合包 / Forge / Fabric 等未来字段的 KV 存储。 */
+    val extras: Map<String, String> = emptyMap(),
 )
