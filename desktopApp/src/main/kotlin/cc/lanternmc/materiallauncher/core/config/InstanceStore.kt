@@ -20,16 +20,15 @@ import java.io.File
 import java.time.OffsetDateTime
 import java.util.UUID
 import cc.lanternmc.materiallauncher.api.GameInstance
-import cc.lanternmc.materiallauncher.core.util.Logger
 import cc.lanternmc.materiallauncher.core.util.Toml
 
 /**
  * instances.toml 多实例持久化：
- *   [[instance]]           强类型字段（name/version/gameDir/java/maxMemory/jvmArgs/...）
- *   [[instance_extra]]     String→String KV 扩展（extras）
+ *   instance[]           强类型字段（name/version/gameDir/java/maxMemory/jvmArgs/...）
+ *   instance_extra[]]     String→String KV 扩展（extras）
  *
- * extras 以独立数组表 `[[instance_extra]]` 持久化（每行带 `instance_id` 引用），
- * 避免在 `[[instance]]` 内嵌子表带来的 TOML 兼容性问题（数组表内不允许子表）。
+ * extras 以独立数组表 `instance_extra[]` 持久化（每行带 `instance_id` 引用），
+ * 避免在 `instance[]` 内嵌子表带来的 TOML 兼容性问题（数组表内不允许子表）。
  */
 class InstanceStore(private val path: String) {
 
