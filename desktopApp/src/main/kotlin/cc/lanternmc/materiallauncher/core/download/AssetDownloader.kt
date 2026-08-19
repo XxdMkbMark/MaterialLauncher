@@ -81,7 +81,7 @@ class AssetDownloader {
                         val url = "$ASSET_BASE_URL/$hashPrefix/${asset.hash}"
                         // 失败自动重下：最多尝试 3 次，且按镜像策略回退
                         var attempts = 0
-                        var lastError: String = ""
+                        var lastError = ""
                         while (attempts < MAX_ASSET_ATTEMPTS) {
                             attempts++
                             try {
