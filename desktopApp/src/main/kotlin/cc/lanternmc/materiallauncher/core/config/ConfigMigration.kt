@@ -25,13 +25,16 @@ import cc.lanternmc.materiallauncher.core.util.Toml
  * 旧版 `config.toml`（[DownloadConfigStore] 持久化格式）→ 新版 `global.toml`
  * （[GlobalConfigStore] 持久化格式）的一次性迁移。
  *
- * 迁移策略：
- *   - 旧文件不存在或新版文件已存在：什么都不做
- *   - 否则解析旧分区 [minecraft] / [java] / [account] / [download] / [launch]，
- *     字段映射为新的扁平 KV，再写入 global.toml
- *   - 迁移成功后把旧文件改名为 `config.toml.migrated` 留作备份（不删除，便于回滚）
+ * 迁移策略（每次调用都会扫一遍旧文件，确保遗留配置被及时归档）：
+ *   - 旧文件不存在：什么都不做
+ *   - 旧文件存在但 global.toml 已存在：不重复迁移，直接把旧文件改名归档
+ *     （保护用户已在 global.toml 中手动调整过的内容不被覆盖）
+ *   - 旧文件存在且 global.toml 不存在：解析旧分区 [minecraft] / [java] /
+ *     [account] / [download] / [launch]，字段映射为新的扁平 KV，写入 global.toml，
+ *     再把旧文件改名归档
  *
- * 迁移是幂等的：再次调用不会重复写入，源文件改名后即视为已迁移。
+ * 归档就是把旧文件改名为 `config.toml.migrated`（不删除，便于回滚）。
+ * 迁移是幂等的：源文件改名后即视为已迁移，再次调用不会重复写入。
  */
 object ConfigMigration {
 

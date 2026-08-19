@@ -66,16 +66,7 @@ class LauncherConfigStore(private val path: String) {
             appendLine("source = ${Toml.quote(settings.download.source)}")
             appendLine("concurrency = ${settings.download.concurrency}")
         }
-        File(path).parentFile?.mkdirs()
-        val tmp = File("$path.tmp")
-        tmp.writeText(content)
-        val target = File(path)
-        if (target.exists() && !target.delete()) {
-            throw IllegalStateException("无法替换旧 launcher.toml")
-        }
-        if (!tmp.renameTo(target)) {
-            throw IllegalStateException("无法写入 launcher.toml")
-        }
+        ConfigIO.writeAtomically(File(path), content)
         true
     }.getOrElse {
         Logger.error("保存 launcher.toml 失败: ${it.message}")

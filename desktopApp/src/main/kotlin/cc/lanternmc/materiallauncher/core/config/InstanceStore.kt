@@ -54,8 +54,11 @@ class InstanceStore(private val path: String) {
             )
         }
         val extrasByInstance = doc.section("instance_extra").items
-            .groupBy { it["instance_id"].orEmpty() }
-            .mapValues { entry -> entry.value.associate { it["key"].orEmpty() to it["value"].orEmpty() } }
+            // 丢弃 instance_id 或 key 为空的损坏条目，避免它们聚到空 id 桶里
+            // 后污染某个真实实例的 extras map，或写出一个空字符串 key 覆盖正常值
+            .filter { it["instance_id"].orEmpty().isNotBlank() && it["key"].orEmpty().isNotBlank() }
+            .groupBy { it["instance_id"]!! }
+            .mapValues { entry -> entry.value.associate { it["key"]!! to it["value"].orEmpty() } }
 
         return instances.map { inst ->
             val merged = extrasByInstance[inst.id].orEmpty()
@@ -88,12 +91,7 @@ class InstanceStore(private val path: String) {
                 }
             }
         }
-        File(path).parentFile?.mkdirs()
-        val tmp = File("$path.tmp")
-        tmp.writeText(content)
-        val target = File(path)
-        if (target.exists()) target.delete()
-        tmp.renameTo(target)
+        ConfigIO.writeAtomically(File(path), content)
     }
 
     fun add(instance: GameInstance): List<GameInstance> {

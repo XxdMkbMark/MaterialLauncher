@@ -96,4 +96,78 @@ class InstanceExtrasTest {
         assertEquals("-Dfoo=bar", final.jvmArgs)
         assertEquals("v", final.extras["k"])
     }
+
+    @Test
+    fun `extras rows with empty instance_id are ignored`() {
+        val path = tempFile()
+        File(path).writeText(
+            """
+            version = 1
+            [[instance]]
+            id = "i-1"
+            name = "A"
+            version_id = "1.20.1"
+            [[instance_extra]]
+            instance_id = ""
+            key = "ghostKey"
+            value = "ghost"
+            [[instance_extra]]
+            instance_id = "i-1"
+            key = "realKey"
+            value = "real"
+            """.trimIndent(),
+        )
+        val loaded = InstanceStore(path).load()
+        assertEquals(1, loaded.size)
+        // ghostKey 不会落到空 id 桶，也不会污染 i-1
+        assertEquals(1, loaded[0].extras.size)
+        assertEquals("real", loaded[0].extras["realKey"])
+    }
+
+    @Test
+    fun `extras rows with empty key are ignored`() {
+        val path = tempFile()
+        File(path).writeText(
+            """
+            version = 1
+            [[instance]]
+            id = "i-1"
+            name = "A"
+            version_id = "1.20.1"
+            [[instance_extra]]
+            instance_id = "i-1"
+            key = ""
+            value = "should-not-appear"
+            [[instance_extra]]
+            instance_id = "i-1"
+            key = "kept"
+            value = "yes"
+            """.trimIndent(),
+        )
+        val loaded = InstanceStore(path).load()
+        assertEquals(1, loaded.size)
+        assertEquals(1, loaded[0].extras.size)
+        assertEquals("yes", loaded[0].extras["kept"])
+    }
+
+    @Test
+    fun `extras rows with empty value are kept (empty value is valid)`() {
+        val path = tempFile()
+        File(path).writeText(
+            """
+            version = 1
+            [[instance]]
+            id = "i-1"
+            name = "A"
+            version_id = "1.20.1"
+            [[instance_extra]]
+            instance_id = "i-1"
+            key = "feature"
+            value = ""
+            """.trimIndent(),
+        )
+        val loaded = InstanceStore(path).load()
+        assertEquals(1, loaded[0].extras.size)
+        assertEquals("", loaded[0].extras["feature"])
+    }
 }
