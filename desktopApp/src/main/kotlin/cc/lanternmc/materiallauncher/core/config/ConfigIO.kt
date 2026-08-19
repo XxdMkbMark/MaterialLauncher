@@ -26,8 +26,8 @@ import java.nio.file.StandardCopyOption
  * 避免每个 store 各自重复一份 delete-then-rename 逻辑。
  *
  * 安全保证：
- *   - 写入 [content] 到 `<target>.tmp`；写入失败抛 IOException，原文件不受影响
- *   - 使用 [Files.move] + `REPLACE_EXISTING` 替换目标；与 delete-then-rename
+ *   - 写入 content 到 `<target>.tmp`；写入失败抛 IOException，原文件不受影响
+ *   - 使用 Files.move + `REPLACE_EXISTING` 替换目标；与 delete-then-rename
  *     不同的是，失败时**不会**留下目标文件被删除而临时文件还没替换上去的空窗
  *   - 优先尝试 `ATOMIC_MOVE`（在同一文件系统上由 OS 保证原子性），
  *     不支持时（FAT32、部分 Windows 配置）回退到普通 `REPLACE_EXISTING`
@@ -52,7 +52,7 @@ object ConfigIO {
                     StandardCopyOption.REPLACE_EXISTING,
                     StandardCopyOption.ATOMIC_MOVE,
                 )
-            } catch (e: AtomicMoveNotSupportedException) {
+            } catch (_: AtomicMoveNotSupportedException) {
                 // FAT32 / 跨文件系统 / 部分 Windows 配置不支持 ATOMIC_MOVE；
                 // 回退到普通 REPLACE_EXISTING，仍比 delete-then-rename 安全
                 // （不会出现目标被删而临时文件还没就位 的状态窗口）。
