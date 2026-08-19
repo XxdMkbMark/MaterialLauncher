@@ -27,7 +27,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 /**
  * 简单的彩色无依赖日志。
  *
- * 支持注册 [LogListener]，每条日志（INFO 及以上）都会推送给监听器，
+ * 支持注册 LogListener，每条日志（INFO 及以上）都会推送给监听器，
  * 用于把日志转发到 UI 面板。
  */
 object Logger {
