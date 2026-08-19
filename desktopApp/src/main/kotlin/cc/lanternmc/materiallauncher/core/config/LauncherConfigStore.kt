@@ -24,8 +24,8 @@ import cc.lanternmc.materiallauncher.core.util.Toml
 /**
  * launcher.toml：启动器本体配置（与具体实例/游戏无关）。
  * 当前结构：
- *   [ui]      theme / language
- *   [download] source / concurrency
+ *   ui      theme / language
+ *   download source / concurrency
  *
  * 文件不存在或解析失败时回退到 [LauncherSettings] 默认值，保证启动器始终可用。
  */
