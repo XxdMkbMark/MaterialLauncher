@@ -17,23 +17,10 @@
 package cc.lanternmc.materiallauncher.core.util
 
 import java.io.File
-import java.security.MessageDigest
 
 /** SHA-256 校验工具，用于 Java 归档等依赖官方 sha256 的下载场景。 */
 object Sha256 {
-    fun ofFile(file: File): String {
-        val digest = MessageDigest.getInstance("SHA-256")
-        // TODO Fix the repeated code segments
-        file.inputStream().use { input ->
-            val buffer = ByteArray(64 * 1024)
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
+    fun ofFile(file: File): String = file.digest("SHA-256")
 
     /**
      * 校验文件 SHA-256 哈希。expectedHash 为空时跳过（视为未提供校验）。

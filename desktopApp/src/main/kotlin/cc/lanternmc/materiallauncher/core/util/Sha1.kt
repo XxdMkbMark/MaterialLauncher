@@ -17,22 +17,9 @@
 package cc.lanternmc.materiallauncher.core.util
 
 import java.io.File
-import java.security.MessageDigest
 
 object Sha1 {
-    fun ofFile(file: File): String {
-        val digest = MessageDigest.getInstance("SHA-1")
-        // TODO Fix the repeated code segments
-        file.inputStream().use { input ->
-            val buffer = ByteArray(64 * 1024)
-            while (true) {
-                val read = input.read(buffer)
-                if (read < 0) break
-                digest.update(buffer, 0, read)
-            }
-        }
-        return digest.digest().joinToString("") { "%02x".format(it) }
-    }
+    fun ofFile(file: File): String = file.digest("SHA-1")
 
     /**
      * 校验文件 SHA-1 哈希与大小，两者之一不匹配即视为非法。
