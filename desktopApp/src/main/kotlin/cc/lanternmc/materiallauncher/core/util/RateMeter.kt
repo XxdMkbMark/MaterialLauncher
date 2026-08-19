@@ -39,25 +39,25 @@ class RateMeter(private val now: () -> Long = { System.currentTimeMillis() }) {
     fun record(totalBytes: Long): Long {
         val time = now()
         if (totalBytes < lastBytes) {
-            // 下载被重置（如切换镜像从头下），清空采样
             samples.clear()
             lastBytes = totalBytes
             return 0
         }
-        if (samples.isNotEmpty()) {
+
+        val speed = if (samples.isNotEmpty()) {
             val first = samples.first()
             val elapsedMs = time - first.timeMs
             if (elapsedMs > 0) {
                 val bytes = totalBytes - first.bytes
-                samples.addLast(Sample(totalBytes, time))
-                while (samples.size > WINDOW) samples.removeFirst()
-                return bytes * 1000L / elapsedMs
-            }
-        }
+                bytes * 1000L / elapsedMs
+            } else 0L
+        } else 0L
+
         samples.addLast(Sample(totalBytes, time))
         while (samples.size > WINDOW) samples.removeFirst()
         lastBytes = totalBytes
-        return 0
+
+        return speed
     }
 
     /** 重置（新下载开始时调用）。 */
