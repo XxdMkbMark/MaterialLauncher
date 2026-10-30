@@ -184,7 +184,7 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                                 modifier = Modifier.scale(0.9F)
                                             )
                                             Text(
-                                                text = "启用动态内存调整",
+                                                text = "指定最小内存",
                                                 fontSize = 14.sp,
                                             )
                                         }
@@ -225,7 +225,7 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                                 modifier = Modifier.scale(0.9F)
                                             )
                                             Text(
-                                                text = "启用动态内存调整",
+                                                text = "指定最小内存",
                                                 fontSize = 14.sp,
                                             )
                                         }

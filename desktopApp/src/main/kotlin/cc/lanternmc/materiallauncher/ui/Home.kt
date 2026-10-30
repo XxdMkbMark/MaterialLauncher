@@ -54,7 +54,7 @@ fun HomePage(navController: NavHostController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text("UNDER CONSTRUCTION", Modifier.padding(16.dp), fontSize = 20.sp)
+                    Text("欢迎使用 Material Launcher", Modifier.padding(16.dp), fontSize = 20.sp)
                     Button(onClick = { showDialog = true }) {
                         Text("这是什么?")
                     }
@@ -122,6 +122,7 @@ fun Home(modifier: Modifier = Modifier) {
                                     navController.navigateTo(Destination.HOME) {
                                         launchSingleTop = true
                                     }
+                                    selectedDestination = 0
                                 },
                                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
                                 elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp, focusedElevation = 0.dp, hoveredElevation = 0.dp),
