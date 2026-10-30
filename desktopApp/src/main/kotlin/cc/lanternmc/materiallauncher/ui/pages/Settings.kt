@@ -34,6 +34,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.rounded.LocalCafe
+import androidx.compose.material.icons.rounded.PlayArrow
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButtonDefaults
@@ -46,8 +47,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
@@ -128,12 +131,20 @@ fun SampleSettings(navController: NavHostController) {
             SampleSettingItem(
                 title = "Java 设置",
                 subtitle = "Java 版本、内存分配、JVM 参数",
+                icon = Icons.Rounded.LocalCafe,
+                iconSize = 24.dp,
+                iconBg = Color(0xFFEAB7CB),
+                iconTint = Color(0xFF472536),
                 onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
                 shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
             )
             SampleSettingItem(
                 title = "启动设置",
-                subtitle = "版本隔离、窗口大小、启动器可见性",
+                subtitle = "版本隔离、窗口大小、自定义标题",
+                icon = Icons.Rounded.PlayArrow,
+                iconSize = 32.dp,
+                iconBg = Color(0xFFAEC7E3),
+                iconTint = Color(0xFF183247),
                 onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
                 shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
             )
@@ -145,13 +156,17 @@ fun SampleSettings(navController: NavHostController) {
 private fun SampleSettingItem(
     title: String,
     subtitle: String,
+    icon: ImageVector,
+    iconSize: Dp,
+    iconBg: Color,
+    iconTint: Color,
     onClick: () -> Unit,
     shape: Shape
 ) {
     Button(
         modifier = Modifier
-            .fillMaxWidth()        // ← 先宽度铺满
-            .height(70.dp),        // ← 再固定高度
+            .fillMaxWidth()        // 先铺满宽度
+            .height(70.dp),        // 再固定高度
         onClick = onClick,
         shape = shape,
         colors = ButtonDefaults.buttonColors(
@@ -174,14 +189,14 @@ private fun SampleSettingItem(
             Box(
                 modifier = Modifier
                     .size(44.dp)
-                    .background(Color(0xFFEAB7CB), CircleShape),
+                    .background(iconBg, CircleShape),  // 图标背景色
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Rounded.LocalCafe,
+                    imageVector = icon,
                     contentDescription = "Settings",
-                    modifier = Modifier.size(24.dp),      // ← 别再用 padding(10).size(44)
-                    tint = Color(0xFF472536)
+                    modifier = Modifier.size(iconSize),
+                    tint = iconTint   //图标颜色
                 )
             }
             Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
