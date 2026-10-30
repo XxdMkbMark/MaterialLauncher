@@ -11,9 +11,9 @@ import cc.lanternmc.materiallauncher.ui.HomePage
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.pages.JavaSettingsPage
 import cc.lanternmc.materiallauncher.ui.pages.SampleDownloadPage
-import cc.lanternmc.materiallauncher.ui.pages.SampleSettings
 import cc.lanternmc.materiallauncher.ui.pages.SampleUsersManagement
 import cc.lanternmc.materiallauncher.ui.pages.SampleVersionsManagement
+import cc.lanternmc.materiallauncher.ui.pages.Settings
 import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
 
 @Composable
@@ -31,7 +31,7 @@ fun AppNavHost (     // 在Destination中添加路由项目后要在此对应到
                     Destination.DOWNLOAD -> SampleDownloadPage(navController)
                     Destination.USERS -> SampleUsersManagement(navController)
                     Destination.VERSIONS -> SampleVersionsManagement(navController)
-                    Destination.SETTINGS -> SampleSettings(navController)
+                    Destination.SETTINGS -> Settings(navController)
                     Destination.JAVA_SETTINGS -> JavaSettingsPage(navController, viewModel = viewModel)
                 }
             }

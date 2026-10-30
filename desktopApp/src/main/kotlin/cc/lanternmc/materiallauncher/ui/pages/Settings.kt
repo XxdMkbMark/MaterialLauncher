@@ -119,7 +119,7 @@ fun SampleSettings(navController: NavHostController) {
 
  */
 @Composable
-fun SampleSettings(navController: NavHostController) {
+fun Settings(navController: NavHostController) {
     MaterialTheme(lightScheme) {
         Column(
             modifier = Modifier
@@ -128,7 +128,7 @@ fun SampleSettings(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.5.dp)   // 两个按钮之间的间距
         ) {
-            SampleSettingItem(
+            SettingItem(
                 title = "Java 设置",
                 subtitle = "Java 版本、内存分配、JVM 参数",
                 icon = Icons.Rounded.LocalCafe,
@@ -138,7 +138,7 @@ fun SampleSettings(navController: NavHostController) {
                 onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
                 shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
             )
-            SampleSettingItem(
+            SettingItem(
                 title = "启动设置",
                 subtitle = "版本隔离、窗口大小、自定义标题",
                 icon = Icons.Rounded.PlayArrow,
@@ -153,7 +153,7 @@ fun SampleSettings(navController: NavHostController) {
 }
 
 @Composable
-private fun SampleSettingItem(
+private fun SettingItem(
     title: String,
     subtitle: String,
     icon: ImageVector,
