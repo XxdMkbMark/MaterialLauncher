@@ -60,64 +60,6 @@ import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 
-/*
-@Composable
-fun SampleSettings(navController: NavHostController) {
-    MaterialTheme(lightScheme) {
-        Column(modifier = Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally) {
-            Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize().padding(15.dp,0.dp,30.dp,0.dp)) { // 第一个设置项
-                Button(
-                    modifier = Modifier.height(70.dp).fillMaxSize(),
-                    onClick = {
-                        navController.navigateTo(destination = Destination.JAVA_SETTINGS)
-                    },
-                    shape = RoundedCornerShape(18.dp,18.dp,5.dp,5.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color(0xFFFFFFFF),
-                        contentColor = Color(0xFF44473D)
-                    ),
-                    elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp, pressedElevation = 0.dp, focusedElevation = 0.dp, hoveredElevation = 0.dp),
-                ) {
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxSize()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(44.dp)
-                                .background(
-                                    color = Color(0xFFEAB7CB),   // 圆形填充色
-                                    shape = CircleShape
-                                ),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(Icons.Rounded.LocalCafe,
-                                "Settings",
-                                modifier = Modifier.padding(10.dp).size(44.dp),
-                                tint = Color(0xFF472536)
-                            )
-                        }
-                        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                            Text("Java 设置",
-                                fontWeight = FontWeight.SemiBold,
-                                style = LocalTextStyle.current.copy(lineHeight = 16.sp),
-                                fontSize = 15.sp
-                            )
-                            Text("Java 版本、内存分配、JVM 参数",
-                                fontWeight = FontWeight.Normal,
-                                style = LocalTextStyle.current.copy(lineHeight = 16.sp),
-
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
- */
 @Composable
 fun Settings(navController: NavHostController) {
     MaterialTheme(lightScheme) {
@@ -128,6 +70,15 @@ fun Settings(navController: NavHostController) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(2.5.dp)   // 两个按钮之间的间距
         ) {
+            Text(
+                "游戏",
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(start = 14.dp),   // 与Button的圆角对齐
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF44473D)
+            )
             SettingItem(
                 title = "Java 设置",
                 subtitle = "Java 版本、内存分配、JVM 参数",
