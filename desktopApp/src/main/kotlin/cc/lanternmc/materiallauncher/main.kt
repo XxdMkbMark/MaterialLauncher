@@ -20,12 +20,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
-import cc.lanternmc.materiallauncher.core.LauncherBackend
-import cc.lanternmc.materiallauncher.ui.App
 import cc.lanternmc.materiallauncher.ui.Home
 
 fun main() = application {
-    val backend = LauncherBackend()
+    val workingDir = System.getProperty("user.dir")
+    println("Working dir: $workingDir")
     Window(
         onCloseRequest = ::exitApplication,
         title = "Material Launcher",
