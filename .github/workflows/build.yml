@@ -12,23 +12,18 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows
           - os: windows-latest
             target: packageExe
             artifact: exe
           - os: windows-latest
             target: packageMsi
             artifact: msi
-
-          # macOS (Intel + Apple Silicon)
-          - os: macos-13          # Intel
+          - os: macos-13
             target: packageDmg
             artifact: dmg-intel
-          - os: macos-14          # Apple Silicon
+          - os: macos-14
             target: packageDmg
             artifact: dmg-arm
-
-          # Linux
           - os: ubuntu-latest
             target: packageDeb
             artifact: deb
@@ -43,10 +38,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
           java-version: '21'
@@ -65,11 +60,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: MaterialLauncher-${{ matrix.artifact }}
-          path: |
-            desktopApp/build/compose/binaries/main/**/*.exe
-            desktopApp/build/compose/binaries/main/**/*.msi
-            desktopApp/build/compose/binaries/main/**/*.dmg
-            desktopApp/build/compose/binaries/main/**/*.deb
-            desktopApp/build/compose/binaries/main/**/*.rpm
-            desktopApp/build/compose/binaries/main/**/*.AppImage
+          path: desktopApp/build/compose/binaries/main/**/*
           if-no-files-found: warn
