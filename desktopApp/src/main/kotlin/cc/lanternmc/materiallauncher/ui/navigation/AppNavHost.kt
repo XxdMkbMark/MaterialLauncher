@@ -10,6 +10,7 @@ import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.ui.HomePage
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.pages.JavaSettingsPage
+import cc.lanternmc.materiallauncher.ui.pages.PersonalizationPage
 import cc.lanternmc.materiallauncher.ui.pages.SampleDownloadPage
 import cc.lanternmc.materiallauncher.ui.pages.SampleUsersManagement
 import cc.lanternmc.materiallauncher.ui.pages.SampleVersionsManagement
@@ -33,6 +34,7 @@ fun AppNavHost (     // 在Destination中添加路由项目后要在此对应到
                     Destination.VERSIONS -> SampleVersionsManagement(navController)
                     Destination.SETTINGS -> Settings(navController)
                     Destination.JAVA_SETTINGS -> JavaSettingsPage(navController, viewModel = viewModel)
+                    Destination.PERSONALIZATION -> PersonalizationPage(navController)
                 }
             }
         }

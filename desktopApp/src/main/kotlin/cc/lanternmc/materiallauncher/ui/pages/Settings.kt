@@ -57,6 +57,7 @@ fun Settings(navController: NavHostController) {
         ) {
             SettingsSectionGame(navController = navController)
             SettingsSectionLauncher(navController = navController)
+            SettingsSectionOthers(navController = navController)
         }
     }
 }
@@ -135,7 +136,7 @@ private fun SettingsSectionLauncher(
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
             iconTint = Color(0xFF601303),
-            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            onClick = { navController.navigateTo(Destination.PERSONALIZATION) },
             shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
         )
     }
