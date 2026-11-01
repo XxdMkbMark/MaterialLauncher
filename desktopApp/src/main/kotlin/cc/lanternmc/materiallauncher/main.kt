@@ -16,6 +16,7 @@
  */
 package cc.lanternmc.materiallauncher
 
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
@@ -29,7 +30,8 @@ fun main() = application {
         onCloseRequest = ::exitApplication,
         title = "Material Launcher",
         state = rememberWindowState(width = 1032.dp, height = 617.dp),
-        resizable = false
+        resizable = false,
+        icon = painterResource("icon.png"),
     ) {
         Home()
     }

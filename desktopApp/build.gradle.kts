@@ -44,9 +44,17 @@ compose.desktop {
         mainClass = "cc.lanternmc.materiallauncher.MainKt"
 
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm, TargetFormat.Exe, TargetFormat.AppImage)
             packageName = "cc.lanternmc.materiallauncher"
             packageVersion = "1.0.0"
+
+            linux {
+                iconFile.set(project.file("src/main/resources/icon.png"))
+            }
+
+            windows {
+                iconFile.set(project.file("src/main/resources/icon.ico"))
+            }
 
             // jlink 精简运行时默认不会自动包含 java.net.http 模块，
             // 缺它会导致打包版打开下载页时 NoClassDefFoundError 崩溃。
