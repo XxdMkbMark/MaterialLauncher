@@ -94,14 +94,6 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                         contentDescription = ""
                                     )
                                 }
-                            },
-                            actions = {
-                                IconButton(onClick = { /* do something */ }) {    // 重置按钮
-                                    Icon(
-                                        imageVector = Icons.Rounded.History,
-                                        contentDescription = ""
-                                    )
-                                }
                             }
                         )
                     },

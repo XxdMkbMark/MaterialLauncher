@@ -131,7 +131,7 @@ private fun SettingsSectionLauncher(
         )
         SettingItem(
             title = "个性化",
-            subtitle = "主题颜色、背景、背景音乐",
+            subtitle = "主题颜色、背景、语言",
             icon = painterResource("apparel_24dp.svg"),
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
@@ -171,7 +171,7 @@ private fun SettingsSectionOthers(
         )
         SettingItem(
             title = "个性化",
-            subtitle = "主题颜色、背景、背景音乐",
+            subtitle = "主题颜色、背景、语言",
             icon = painterResource("apparel_24dp.svg"),
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
