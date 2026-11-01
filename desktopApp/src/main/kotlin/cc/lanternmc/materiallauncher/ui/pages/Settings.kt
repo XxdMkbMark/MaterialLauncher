@@ -18,30 +18,16 @@
 package cc.lanternmc.materiallauncher.ui.pages
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.LocalCafe
 import androidx.compose.material.icons.rounded.PlayArrow
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.FloatingActionButtonDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.LocalTextStyle
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,13 +35,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
-import cc.lanternmc.materiallauncher.ui.navigation.AppNavHost
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
@@ -66,40 +49,93 @@ fun Settings(navController: NavHostController) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 15.dp, vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(2.5.dp)   // 两个按钮之间的间距
+            verticalArrangement = Arrangement.spacedBy(16.dp)   // 两个大块之间的间距
         ) {
-            Text(
-                "游戏",
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 14.dp),   // 与Button的圆角对齐
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFF44473D)
-            )
-            SettingItem(
-                title = "Java 设置",
-                subtitle = "Java 版本、内存分配、JVM 参数",
-                icon = Icons.Rounded.LocalCafe,
-                iconSize = 24.dp,
-                iconBg = Color(0xFFEAB7CB),
-                iconTint = Color(0xFF472536),
-                onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
-                shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
-            )
-            SettingItem(
-                title = "启动设置",
-                subtitle = "版本隔离、窗口大小、自定义标题",
-                icon = Icons.Rounded.PlayArrow,
-                iconSize = 32.dp,
-                iconBg = Color(0xFFAEC7E3),
-                iconTint = Color(0xFF183247),
-                onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
-                shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
-            )
+            SettingsSectionGame(navController = navController)
+            SettingsSectionLauncher(navController = navController)
         }
+    }
+}
+
+@Composable
+private fun SettingsSectionGame(
+    navController: NavHostController
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),          // 宽度铺满，高度 wrap content
+        verticalArrangement = Arrangement.spacedBy(2.5.dp)
+    ) {
+        Text(
+            text = "游戏",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 14.dp),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF44473D)
+        )
+        SettingItem(
+            title = "Java 设置",
+            subtitle = "Java 版本、内存分配、JVM 参数",
+            icon = Icons.Rounded.LocalCafe,
+            iconSize = 24.dp,
+            iconBg = Color(0xFFBCCA9C),
+            iconTint = Color(0xFF293412),
+            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
+        )
+        SettingItem(
+            title = "启动",
+            subtitle = "版本隔离、窗口大小、自定义标题",
+            icon = Icons.Rounded.PlayArrow,
+            iconSize = 32.dp,
+            iconBg = Color(0xFFA4CEBB),
+            iconTint = Color(0xFF0E3729),
+            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
+        )
+    }
+}
+
+@Composable
+private fun SettingsSectionLauncher(
+    navController: NavHostController
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),          // 宽度铺满，高度 wrap content
+        verticalArrangement = Arrangement.spacedBy(2.5.dp)
+    ) {
+        Text(
+            text = "启动器",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 14.dp),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF44473D)
+        )
+        SettingItem(
+            title = "下载",
+            subtitle = "下载源、速度限制、缓存",
+            icon = Icons.Rounded.Download,
+            iconSize = 28.dp,
+            iconBg = Color(0xFFE0C08E),
+            iconTint = Color(0xFF3F2E07),
+            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
+        )
+        SettingItem(
+            title = "个性化",
+            subtitle = "版本隔离、窗口大小、自定义标题",
+            icon = Icons.Rounded.PlayArrow,
+            iconSize = 32.dp,
+            iconBg = Color(0xFFFBB4A2),
+            iconTint = Color(0xFF601303),
+            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
+        )
     }
 }
 
@@ -150,7 +186,7 @@ private fun SettingItem(
                     tint = iconTint   //图标颜色
                 )
             }
-            Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
                 Text(
                     title,
                     fontWeight = FontWeight.SemiBold,
@@ -160,6 +196,7 @@ private fun SettingItem(
                 Text(
                     subtitle,
                     fontWeight = FontWeight.Normal,
+                    fontSize = 13.sp,
                     style = LocalTextStyle.current.copy(lineHeight = 16.sp)
                 )
             }
