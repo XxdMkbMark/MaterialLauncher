@@ -33,7 +33,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -79,7 +81,7 @@ private fun SettingsSectionGame(
         SettingItem(
             title = "Java 设置",
             subtitle = "Java 版本、内存分配、JVM 参数",
-            icon = Icons.Rounded.LocalCafe,
+            icon = painterResource("coffee_24dp.svg"),
             iconSize = 24.dp,
             iconBg = Color(0xFFBCCA9C),
             iconTint = Color(0xFF293412),
@@ -89,7 +91,7 @@ private fun SettingsSectionGame(
         SettingItem(
             title = "启动",
             subtitle = "版本隔离、窗口大小、自定义标题",
-            icon = Icons.Rounded.PlayArrow,
+            icon = painterResource("play_arrow_24dp.svg"),
             iconSize = 32.dp,
             iconBg = Color(0xFFA4CEBB),
             iconTint = Color(0xFF0E3729),
@@ -119,8 +121,8 @@ private fun SettingsSectionLauncher(
         SettingItem(
             title = "下载",
             subtitle = "下载源、速度限制、缓存",
-            icon = Icons.Rounded.Download,
-            iconSize = 28.dp,
+            icon = painterResource("download_24dp.svg"),
+            iconSize = 26.dp,
             iconBg = Color(0xFFE0C08E),
             iconTint = Color(0xFF3F2E07),
             onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
@@ -128,9 +130,49 @@ private fun SettingsSectionLauncher(
         )
         SettingItem(
             title = "个性化",
-            subtitle = "版本隔离、窗口大小、自定义标题",
-            icon = Icons.Rounded.PlayArrow,
-            iconSize = 32.dp,
+            subtitle = "主题颜色、背景、背景音乐",
+            icon = painterResource("apparel_24dp.svg"),
+            iconSize = 28.dp,
+            iconBg = Color(0xFFFBB4A2),
+            iconTint = Color(0xFF601303),
+            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
+        )
+    }
+}
+
+@Composable
+private fun SettingsSectionOthers(
+    navController: NavHostController
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),          // 宽度铺满，高度 wrap content
+        verticalArrangement = Arrangement.spacedBy(2.5.dp)
+    ) {
+        Text(
+            text = "杂项",
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(start = 14.dp),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF44473D)
+        )
+        SettingItem(
+            title = "下载",
+            subtitle = "下载源、速度限制、缓存",
+            icon = painterResource("download_24dp.svg"),
+            iconSize = 26.dp,
+            iconBg = Color(0xFFE0C08E),
+            iconTint = Color(0xFF3F2E07),
+            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
+        )
+        SettingItem(
+            title = "个性化",
+            subtitle = "主题颜色、背景、背景音乐",
+            icon = painterResource("apparel_24dp.svg"),
+            iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
             iconTint = Color(0xFF601303),
             onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
@@ -143,7 +185,7 @@ private fun SettingsSectionLauncher(
 private fun SettingItem(
     title: String,
     subtitle: String,
-    icon: ImageVector,
+    icon: Painter,
     iconSize: Dp,
     iconBg: Color,
     iconTint: Color,
@@ -180,7 +222,7 @@ private fun SettingItem(
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = icon,
+                    painter = icon,
                     contentDescription = "Settings",
                     modifier = Modifier.size(iconSize),
                     tint = iconTint   //图标颜色
