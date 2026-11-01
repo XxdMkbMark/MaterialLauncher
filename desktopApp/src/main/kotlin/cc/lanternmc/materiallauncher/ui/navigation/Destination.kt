@@ -20,5 +20,7 @@ enum class Destination (  // 在此处定义所有需要跳转的页面
     VERSIONS("versions","版本", Icons.Rounded.Checklist, showInNavigationRail = true),
     SETTINGS("settings", "设置", Icons.Rounded.Settings, showInNavigationRail = true),
     JAVA_SETTINGS("java_settings", "Java 设置", Icons.Rounded.Settings),
-    PERSONALIZATION("personalization", "个性化", Icons.Rounded.Settings),
+    PERSONALIZATION_SETTINGS("personalization_settings", "个性化设置", Icons.Rounded.Settings),
+    START_SETTINGS("start_settings", "启动设置", Icons.Rounded.Settings),
+    DOWNLOAD_SETTINGS("download_settings", "下载设置", Icons.Rounded.Settings),
 }

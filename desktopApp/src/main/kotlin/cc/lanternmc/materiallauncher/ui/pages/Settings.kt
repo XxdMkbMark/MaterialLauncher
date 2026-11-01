@@ -96,7 +96,7 @@ private fun SettingsSectionGame(
             iconSize = 32.dp,
             iconBg = Color(0xFFA4CEBB),
             iconTint = Color(0xFF0E3729),
-            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            onClick = { navController.navigateTo(Destination.START_SETTINGS) },
             shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
         )
     }
@@ -126,7 +126,7 @@ private fun SettingsSectionLauncher(
             iconSize = 26.dp,
             iconBg = Color(0xFFE0C08E),
             iconTint = Color(0xFF3F2E07),
-            onClick = { navController.navigateTo(Destination.JAVA_SETTINGS) },
+            onClick = { navController.navigateTo(Destination.DOWNLOAD_SETTINGS) },
             shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
         )
         SettingItem(
@@ -136,7 +136,7 @@ private fun SettingsSectionLauncher(
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
             iconTint = Color(0xFF601303),
-            onClick = { navController.navigateTo(Destination.PERSONALIZATION) },
+            onClick = { navController.navigateTo(Destination.PERSONALIZATION_SETTINGS) },
             shape = RoundedCornerShape(4.dp, 4.dp, 18.dp, 18.dp)
         )
     }
