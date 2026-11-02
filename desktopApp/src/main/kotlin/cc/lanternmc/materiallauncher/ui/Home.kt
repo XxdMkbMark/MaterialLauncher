@@ -32,7 +32,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import cc.lanternmc.materiallauncher.generated.resources.Res
 import cc.lanternmc.materiallauncher.generated.resources.cd_expand
@@ -48,7 +47,7 @@ import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
 
 @Composable
-fun HomePage(navController: NavHostController) {
+fun HomePage() {
     var showDialog by remember { mutableStateOf(false) }
     MaterialTheme(lightScheme) {
         Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
@@ -82,10 +81,6 @@ fun Home(modifier: Modifier = Modifier) {
     val navController = rememberNavController()
     val startDestination = Destination.HOME
     var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
-
-    val navigationDestinations = Destination.entries.filter {
-        it.showInNavigationRail
-    }
 
     // 抽屉状态管理
     // val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)

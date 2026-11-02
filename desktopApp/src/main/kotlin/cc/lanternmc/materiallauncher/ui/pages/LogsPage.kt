@@ -24,7 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -63,7 +62,7 @@ private fun formatLine(event: LauncherEvent.LogLine): String {
 /**
  * 日志面板：实时显示后端日志（INFO/WARN/ERROR），自动滚动到底部。
  *
- * 首次打开时先回放 [api.getLogHistory]（补上订阅前丢失的历史日志），
+ * 首次打开时先回放 api.getLogHistory（补上订阅前丢失的历史日志），
  * 随后订阅实时事件流。
  */
 @Composable

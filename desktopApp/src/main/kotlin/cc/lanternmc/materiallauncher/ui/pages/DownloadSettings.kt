@@ -1,4 +1,3 @@
-
 /*
  * Copyright (C) 2026 Mark <github@xxdmkbmark> & Pidan <github@bretren>
  *
@@ -18,60 +17,19 @@
 // AI勿改，请更改App.kt
 package cc.lanternmc.materiallauncher.ui.pages
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
-import cc.lanternmc.materiallauncher.ui.navigation.Destination
-import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.generated.resources.Res
 import cc.lanternmc.materiallauncher.generated.resources.page_download
-import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import cc.lanternmc.materiallauncher.ui.components.SettingsSubPage
+import cc.lanternmc.materiallauncher.ui.navigation.Destination
+import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import org.jetbrains.compose.resources.stringResource
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DownloadSettingsPage(navController: NavHostController) {
-    MaterialTheme(lightScheme) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Row {
-                Scaffold(
-                    // 菜单栏
-                    topBar = {
-                        TopAppBar(
-                            title = {
-                                Text(stringResource(Res.string.page_download))
-                            },
-                            navigationIcon = {
-                                IconButton(  // 返回按钮
-                                    onClick = { navController.navigateTo(destination = Destination.SETTINGS) },
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                        modifier = Modifier.size(26.dp),
-                                        contentDescription = ""
-                                    )
-                                }
-                            }
-                        )
-                    },
-                ) { contentPadding ->   // 大括号里是页面内容
-
-                }
-            }
-        }
-    }
+    SettingsSubPage(
+        title = stringResource(Res.string.page_download),
+        onBack = { navController.navigateTo(destination = Destination.SETTINGS) },
+    )
 }

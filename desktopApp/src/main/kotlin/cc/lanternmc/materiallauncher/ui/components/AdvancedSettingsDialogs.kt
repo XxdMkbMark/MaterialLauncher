@@ -18,17 +18,14 @@ package cc.lanternmc.materiallauncher.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -73,8 +70,8 @@ fun AdvancedSettingsDialogs(
     onApply: (DownloadConfig) -> Unit,
 ) {
     when (dialog) {
-        AdvancedDialog.MIRROR -> MirrorSourceDialog(api, config, onDismiss, onApply)
-        AdvancedDialog.ADVANCED_ARGS -> AdvancedArgsDialog(api, config, onDismiss, onApply)
+        AdvancedDialog.MIRROR -> MirrorSourceDialog(config, onDismiss, onApply)
+        AdvancedDialog.ADVANCED_ARGS -> AdvancedArgsDialog(config, onDismiss, onApply)
         AdvancedDialog.DATA_DIR -> DataDirectoryDialog(api, onDismiss)
         null -> Unit
     }
@@ -132,7 +129,6 @@ private fun DataDirectoryDialog(
 
 @Composable
 private fun MirrorSourceDialog(
-    api: LauncherApi,
     config: DownloadConfig?,
     onDismiss: () -> Unit,
     onApply: (DownloadConfig) -> Unit,
@@ -185,7 +181,6 @@ private fun MirrorSourceDialog(
 
 @Composable
 private fun AdvancedArgsDialog(
-    api: LauncherApi,
     config: DownloadConfig?,
     onDismiss: () -> Unit,
     onApply: (DownloadConfig) -> Unit,

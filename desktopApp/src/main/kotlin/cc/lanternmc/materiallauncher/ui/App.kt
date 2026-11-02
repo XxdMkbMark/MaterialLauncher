@@ -21,6 +21,8 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Article
+import androidx.compose.material.icons.automirrored.filled.ViewList
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -66,6 +68,7 @@ import org.jetbrains.compose.resources.stringResource
 
 private enum class Page { LAUNCH, DOWNLOAD, INSTANCES, LOGS }
 
+@Suppress("unused") // 当前入口是 Home()。这个完整启动器界面先留着，还没接到 main。
 @Composable
 fun App(backend: LauncherBackend) {
     MaterialTheme(lightColorScheme()) {
@@ -275,14 +278,14 @@ fun App(backend: LauncherBackend) {
                     ),
                     SidebarCategory(
                         label = stringResource(Res.string.sidebar_instances),
-                        icon = Icons.Default.ViewList,
+                        icon = Icons.AutoMirrored.Filled.ViewList,
                         items = listOf(
                             SidebarItem(stringResource(Res.string.sidebar_multi_instance)) { page = Page.INSTANCES },
                         ),
                     ),
                     SidebarCategory(
                         label = stringResource(Res.string.sidebar_logs),
-                        icon = Icons.Default.Article,
+                        icon = Icons.AutoMirrored.Filled.Article,
                         items = listOf(
                             SidebarItem(stringResource(Res.string.sidebar_log_panel)) { page = Page.LOGS },
                         ),

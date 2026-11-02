@@ -24,26 +24,19 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.ArrowBack
-import androidx.compose.material.icons.rounded.History
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RangeSlider
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -57,7 +50,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
-import cc.lanternmc.materiallauncher.api.JavaInstallation
+import cc.lanternmc.materiallauncher.ui.components.SettingsSubPage
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.generated.resources.Res
@@ -69,7 +62,6 @@ import cc.lanternmc.materiallauncher.generated.resources.java_memory_unset_max
 import cc.lanternmc.materiallauncher.generated.resources.java_rescan
 import cc.lanternmc.materiallauncher.generated.resources.java_set_min_memory
 import cc.lanternmc.materiallauncher.generated.resources.settings_java_title
-import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 import org.jetbrains.compose.resources.stringResource
 import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
 
@@ -81,34 +73,20 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
 
     var rangeSliderPosition by remember { mutableStateOf(0f..4096f) }    // 范围内存滑块
     var sliderPosition by remember { mutableFloatStateOf(4096f) }   // 内存滑块
-    var Xms = 0
-    var Xmx = 0
+    var Xms: Int
+    var Xmx: Int
 
     var isJavaSelectionExpanded by remember { mutableStateOf(false) }    // 下拉框
     var selectedJava by remember { mutableStateOf(javaList[0]) }
 
     var doDynamicMemChecked by remember { mutableStateOf(false) }    // 复选框
 
-    MaterialTheme(lightScheme) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Row {
-                Scaffold(    // 菜单栏
-                    topBar = {
-                        TopAppBar(
-                            title = {
-                                Text(stringResource(Res.string.settings_java_title))
-                            },
-                            navigationIcon = {
-                                IconButton(onClick = { navController.navigateTo(destination = Destination.SETTINGS) }) {    // 返回按钮
-                                    Icon(
-                                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                                        contentDescription = ""
-                                    )
-                                }
-                            }
-                        )
-                    },
-                ) { contentPadding ->   // 大括号里是页面内容
+    SettingsSubPage(
+        title = stringResource(Res.string.settings_java_title),
+        onBack = { navController.navigateTo(destination = Destination.SETTINGS) },
+        // 这一页原来的返回图标没有写死 26.dp，保持默认尺寸。
+        backIconSize = null,
+    ) { contentPadding ->
                     Box(modifier = Modifier.fillMaxSize().padding(contentPadding).padding(start = 18.dp)) {
                         Column {
                             Text(text = stringResource(Res.string.java_global_version), modifier = Modifier.padding(4.dp,10.dp))
@@ -127,7 +105,7 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                         onValueChange = {},
                                         readOnly = true,
                                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isJavaSelectionExpanded) },
-                                        modifier = Modifier.menuAnchor()     // 将文本框与菜单锚定
+                                        modifier = Modifier.menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable)
                                     )
 
                                     // 下拉菜单
@@ -247,8 +225,5 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                             }
                         }
                     }
-                }
-            }
-        }
     }
 }

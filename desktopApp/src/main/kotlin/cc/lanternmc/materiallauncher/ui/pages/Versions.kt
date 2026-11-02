@@ -23,13 +23,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.navigation.NavHostController
 import cc.lanternmc.materiallauncher.generated.resources.Res
 import cc.lanternmc.materiallauncher.generated.resources.page_versions
 import org.jetbrains.compose.resources.stringResource
 
 @Composable
-fun SampleVersionsManagement(navController: NavHostController) {
+fun SampleVersionsManagement() {
     MaterialTheme {
         Box(modifier = Modifier.fillMaxSize()) {
             Text(stringResource(Res.string.page_versions))

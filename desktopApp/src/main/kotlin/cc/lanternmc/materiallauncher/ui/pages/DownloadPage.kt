@@ -54,6 +54,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
@@ -126,7 +127,7 @@ fun DownloadPage(
                 downloads[progress.id] = progress
                 if (progress.status == "done" || progress.status == "error") {
                     scope.launch {
-                        delay(5000)
+                        delay(5000.milliseconds)
                         downloads.remove(progress.id)
                     }
                 }
@@ -302,7 +303,7 @@ private fun DownloadRow(
                 val etaSec = if (speed > 0) (total - downloaded).coerceAtLeast(0) / speed else -1L
                 val etaLabel = formatEta(etaSec)
                 LinearProgressIndicator(
-                    progress = { if (prog?.total ?: 0 > 0) fraction else 0f },
+                    progress = { if ((prog?.total ?: 0) > 0) fraction else 0f },
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 )
                 Text(
@@ -330,9 +331,10 @@ private fun DownloadRow(
             else -> Icon(Icons.Default.Download, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
         }
     }
-    if (err && !prog?.error.isNullOrBlank()) {
+    val errorText = prog?.error
+    if (err && !errorText.isNullOrBlank()) {
         Text(
-            text = prog?.error.orEmpty(),
+            text = errorText,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.error,
             modifier = Modifier.padding(horizontal = 8.dp),

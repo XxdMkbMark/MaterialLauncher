@@ -37,7 +37,7 @@ dependencies {
     testImplementation(libs.kotlin.testJunit)
     testImplementation(libs.junit)
     implementation(libs.androidx.lifecycle.viewmodelCompose)
-    implementation(compose.components.resources)
+    implementation("org.jetbrains.compose.components:components-resources:${libs.versions.composeMultiplatform.get()}")
 }
 
 compose.resources {

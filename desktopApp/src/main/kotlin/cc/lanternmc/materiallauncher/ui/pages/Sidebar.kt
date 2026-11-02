@@ -33,7 +33,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -52,6 +51,7 @@ import androidx.compose.ui.input.pointer.pointerMoveFilter
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.Job
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -88,7 +88,7 @@ fun LauncherSidebar(
     fun scheduleClose() {
         closeJob?.cancel()
         closeJob = scope.launch {
-            delay(200)
+            delay(200.milliseconds)
             activeLabel = null
         }
     }
