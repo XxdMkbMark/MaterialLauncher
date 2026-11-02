@@ -5,9 +5,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.lifecycle.viewmodel.compose.viewModel
 import cc.lanternmc.materiallauncher.ui.HomePage
-import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.pages.DownloadSettingsPage
 import cc.lanternmc.materiallauncher.ui.pages.JavaSettingsPage
 import cc.lanternmc.materiallauncher.ui.pages.PersonalizationSettingsPage

@@ -93,8 +93,7 @@ fun Home(modifier: Modifier = Modifier) {
                 NavigationRail(
                     modifier = Modifier
                         .fillMaxHeight()
-                        // 英文标签 Download / Versions / Settings 比两个汉字宽，72.dp 会裁掉末尾字母。
-                        .width(96.dp),
+                        .width(72.dp),
                     containerColor = MaterialTheme.colorScheme.surface,
                 ) {
                     Column(
