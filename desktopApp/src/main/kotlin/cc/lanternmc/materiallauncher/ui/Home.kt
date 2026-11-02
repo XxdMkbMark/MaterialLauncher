@@ -74,7 +74,7 @@ fun HomePage() {
     }
 }
 
-@Preview
+
 @Composable
 fun Home(modifier: Modifier = Modifier) {
     val viewModel = remember { JavaScannerViewModel() }
@@ -82,24 +82,13 @@ fun Home(modifier: Modifier = Modifier) {
     val startDestination = Destination.HOME
     var selectedDestination by rememberSaveable { mutableIntStateOf(startDestination.ordinal) }
 
-    // 抽屉状态管理
-    // val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
-    // val coroutineScope = rememberCoroutineScope()
-
     MaterialTheme(lightScheme) {
         Scaffold(modifier = modifier) { contentPadding ->
             Row(modifier = Modifier.padding(contentPadding)) {
-                // 左侧导航栏
                 NavigationRail(
-                    modifier = Modifier
-                        .fillMaxHeight()
-                        .width(72.dp),
+                    modifier = Modifier.fillMaxHeight(),
                     containerColor = MaterialTheme.colorScheme.surface,
-                ) {
-                    Column(
-                        modifier = Modifier.fillMaxHeight(),
-                        verticalArrangement = Arrangement.SpaceBetween
-                    ) {
+                    header = {
                         Column(
                             modifier = Modifier.padding(top = 8.dp),
                             horizontalAlignment = Alignment.CenterHorizontally,
@@ -107,12 +96,10 @@ fun Home(modifier: Modifier = Modifier) {
                         ) {
                             NavigationRailItem(
                                 selected = false,
-                                onClick = {
-                                    // coroutineScope.launch { drawerState.open() }
-                                },
+                                onClick = { /* drawer */ },
                                 icon = {
                                     Icon(
-                                        imageVector = Icons.Rounded.Menu,
+                                        Icons.Rounded.Menu,
                                         contentDescription = stringResource(Res.string.cd_expand),
                                     )
                                 },
@@ -126,7 +113,7 @@ fun Home(modifier: Modifier = Modifier) {
                                     selectedDestination = 0
                                 },
                                 modifier = Modifier.padding(top = 8.dp, bottom = 16.dp),
-                                elevation = FloatingActionButtonDefaults.elevation(defaultElevation = 0.dp, pressedElevation = 0.dp, focusedElevation = 0.dp, hoveredElevation = 0.dp),
+                                elevation = FloatingActionButtonDefaults.elevation(0.dp, 0.dp, 0.dp, 0.dp),
                                 containerColor = MaterialTheme.colorScheme.primaryContainer,
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ) {
@@ -137,30 +124,35 @@ fun Home(modifier: Modifier = Modifier) {
                                 )
                             }
                         }
-
-                        Column(
-                            modifier = Modifier.weight(1f).padding(20.dp),  // 占据剩余空间
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                        ) {
-
-                            Destination.entries.forEachIndexed { index, destination ->
-                                if (!destination.showInNavigationRail) return@forEachIndexed
-                                NavigationRailItem(
-                                    selected = selectedDestination == index,
-                                    onClick = {
-                                        navController.navigateTo(destination)
-                                        selectedDestination = index
-                                    },
-                                    icon = {
-                                        Icon(destination.icon, contentDescription = "")
-                                    },
-                                    label = { Text(text = stringResource(destination.label), textAlign = TextAlign.Center) }
-                                )
-                            }
-
-
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .weight(1f)
+                            .padding(vertical = 20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        Destination.entries.forEachIndexed { index, destination ->
+                            if (!destination.showInNavigationRail) return@forEachIndexed
+                            NavigationRailItem(
+                                selected = selectedDestination == index,
+                                onClick = {
+                                    navController.navigateTo(destination)
+                                    selectedDestination = index
+                                },
+                                icon = {
+                                    Icon(
+                                        destination.icon,
+                                        contentDescription = stringResource(destination.label)
+                                    )
+                                },
+                                label = {
+                                    Text(stringResource(destination.label))
+                                },
+                                alwaysShowLabel = true
+                            )
                         }
-
                     }
                 }
 
