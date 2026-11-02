@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -59,7 +60,17 @@ import androidx.navigation.NavHostController
 import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.java_allocated_memory
+import cc.lanternmc.materiallauncher.generated.resources.java_global_memory
+import cc.lanternmc.materiallauncher.generated.resources.java_global_version
+import cc.lanternmc.materiallauncher.generated.resources.java_memory_min_max
+import cc.lanternmc.materiallauncher.generated.resources.java_memory_unset_max
+import cc.lanternmc.materiallauncher.generated.resources.java_rescan
+import cc.lanternmc.materiallauncher.generated.resources.java_set_min_memory
+import cc.lanternmc.materiallauncher.generated.resources.settings_java_title
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import org.jetbrains.compose.resources.stringResource
 import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -85,7 +96,7 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                     topBar = {
                         TopAppBar(
                             title = {
-                                Text("Java 设置")
+                                Text(stringResource(Res.string.settings_java_title))
                             },
                             navigationIcon = {
                                 IconButton(onClick = { navController.navigateTo(destination = Destination.SETTINGS) }) {    // 返回按钮
@@ -100,7 +111,7 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                 ) { contentPadding ->   // 大括号里是页面内容
                     Box(modifier = Modifier.fillMaxSize().padding(contentPadding).padding(start = 18.dp)) {
                         Column {
-                            Text(text = "全局Java版本", modifier = Modifier.padding(4.dp,10.dp))
+                            Text(text = stringResource(Res.string.java_global_version), modifier = Modifier.padding(4.dp,10.dp))
                             Row(
                                 horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -144,11 +155,11 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                         horizontalArrangement = Arrangement.spacedBy(4.dp, Alignment.End)
                                     ) {
                                         Icon(imageVector = Icons.Rounded.Refresh, contentDescription = "")
-                                        Text("重新扫描")
+                                        Text(stringResource(Res.string.java_rescan))
                                     }
                                 }
                             }
-                            Text(text = "全局JVM内存分配", modifier = Modifier.padding(start = 4.dp, top = 26.dp, bottom = 4.dp))
+                            Text(text = stringResource(Res.string.java_global_memory), modifier = Modifier.padding(start = 4.dp, top = 26.dp, bottom = 4.dp))
                             Column(
                                 modifier = Modifier.padding(start = 20.dp, end = 36.dp)
                             ) {
@@ -161,11 +172,16 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.End),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(0.dp, 0.dp, 0.dp)
+                                        // 英文 “Allocated memory / Set minimum memory” 比中文长，铺满宽度后让数字说明让出位置。
+                                        modifier = Modifier.fillMaxWidth().padding(0.dp, 0.dp, 0.dp)
                                     ) {
                                         Xmx = sliderPosition.toInt()
                                         Xms = Xmx
-                                        Text(text = "分配的内存: ${Xmx}MB", fontSize = 14.sp)
+                                        Text(
+                                            text = stringResource(Res.string.java_allocated_memory, Xmx.toString()),
+                                            fontSize = 14.sp,
+                                            modifier = Modifier.weight(1f),
+                                        )
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
                                             horizontalArrangement = Arrangement.spacedBy((-5).dp, Alignment.End),
@@ -177,7 +193,7 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                                 modifier = Modifier.scale(0.9F)
                                             )
                                             Text(
-                                                text = "指定最小内存",
+                                                text = stringResource(Res.string.java_set_min_memory),
                                                 fontSize = 14.sp,
                                             )
                                         }
@@ -195,18 +211,22 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                     Row(
                                         horizontalArrangement = Arrangement.spacedBy(18.dp, Alignment.End),
                                         verticalAlignment = Alignment.CenterVertically,
-                                        modifier = Modifier.padding(0.dp, 0.dp, 0.dp)
+                                        // 英文最小/最大内存说明更长，不限宽会把右侧复选框挤出窗口。
+                                        modifier = Modifier.fillMaxWidth().padding(0.dp, 0.dp, 0.dp)
                                     ) {
                                         Xms = rangeSliderPosition.start.toInt()
                                         Xmx = rangeSliderPosition.endInclusive.toInt()
+                                        val unsetMemory = stringResource(Res.string.java_memory_unset_max, Xmx.toString())
+                                        val rangedMemory = stringResource(Res.string.java_memory_min_max, Xms.toString(), Xmx.toString())
                                         Text(
                                             text =
                                                 if (Xms == 0) {     // 如果最小内存设为0则显示不指定
-                                                    "最小内存: 不指定      最大内存: ${Xmx}MB"
+                                                    unsetMemory
                                                 } else {
-                                                    "最小内存: ${Xms}MB      最大内存: ${Xmx}MB"
+                                                    rangedMemory
                                                 },
                                             fontSize = 14.sp,
+                                            modifier = Modifier.weight(1f),
                                         )
                                         Row(
                                             verticalAlignment = Alignment.CenterVertically,
@@ -218,7 +238,7 @@ fun JavaSettingsPage(navController: NavHostController, viewModel: JavaScannerVie
                                                 modifier = Modifier.scale(0.9F)
                                             )
                                             Text(
-                                                text = "指定最小内存",
+                                                text = stringResource(Res.string.java_set_min_memory),
                                                 fontSize = 14.sp,
                                             )
                                         }

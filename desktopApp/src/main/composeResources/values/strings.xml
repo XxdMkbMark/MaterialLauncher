@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Material Launcher</string>
+
+    <string name="nav_home">主页</string>
+    <string name="nav_download">下载</string>
+    <string name="nav_users">档案</string>
+    <string name="nav_versions">版本</string>
+    <string name="nav_settings">设置</string>
+    <string name="nav_java_settings">Java 设置</string>
+    <string name="nav_personalization">个性化设置</string>
+    <string name="nav_start_settings">启动设置</string>
+    <string name="nav_download_settings">下载设置</string>
+
+    <string name="home_welcome">欢迎使用 Material Launcher</string>
+    <string name="home_what_is_this">这是什么?</string>
+    <string name="cd_expand">展开</string>
+    <string name="cd_home">主页</string>
+
+    <string name="under_construction_title">这是什么?</string>
+    <string name="under_construction_body">当你看到这个提示时, 意味着此页面正在施工且暂无可正常使用的功能 (也可能是我没想好页面布局)</string>
+    <string name="under_construction_ok">OK</string>
+    <string name="cd_under_construction">施工中</string>
+
+    <string name="page_versions">版本管理</string>
+    <string name="page_download">下载</string>
+    <string name="page_users">用户档案</string>
+    <string name="page_personalization">个性化</string>
+    <string name="page_start">启动</string>
+
+    <string name="settings_section_game">游戏</string>
+    <string name="settings_java_title">Java 设置</string>
+    <string name="settings_java_subtitle">Java 版本、内存分配、JVM 参数</string>
+    <string name="settings_launch_title">启动</string>
+    <string name="settings_launch_subtitle">版本隔离、窗口大小、自定义标题</string>
+    <string name="settings_section_launcher">启动器</string>
+    <string name="settings_download_title">下载</string>
+    <string name="settings_download_subtitle">下载源、速度限制、缓存</string>
+    <string name="settings_personalization_title">个性化</string>
+    <string name="settings_personalization_subtitle">主题颜色、背景、语言</string>
+    <string name="settings_section_other">杂项</string>
+    <string name="cd_settings">设置</string>
+
+    <string name="java_global_version">全局Java版本</string>
+    <string name="java_rescan">重新扫描</string>
+    <string name="java_global_memory">全局JVM内存分配</string>
+    <string name="java_allocated_memory">分配的内存: %1$sMB</string>
+    <string name="java_set_min_memory">指定最小内存</string>
+    <string name="java_memory_unset_max">最小内存: 不指定      最大内存: %1$sMB</string>
+    <string name="java_memory_min_max">最小内存: %1$sMB      最大内存: %2$sMB</string>
+
+    <string name="not_selected">未选择</string>
+    <string name="not_set">未设置</string>
+    <string name="action_save">保存</string>
+    <string name="action_close">关闭</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_apply">应用</string>
+    <string name="action_add">添加</string>
+    <string name="action_back">返回</string>
+    <string name="action_clear">清空</string>
+    <string name="action_launch">启动</string>
+    <string name="action_start_download">开始下载</string>
+
+    <string name="data_dir_title">数据目录设置</string>
+    <string name="data_dir_body">启动器的配置 / 账户 / 实例清单 / Java 缓存存放在此目录。当前安装版默认在用户目录（&#37;APPDATA&#37;\MaterialLauncher），免安装版在 exe 同级 data\。</string>
+    <string name="data_dir_label">数据目录（绝对路径）</string>
+    <string name="data_dir_empty">目录不能为空</string>
+    <string name="data_dir_saved">已保存，重启启动器后生效</string>
+    <string name="data_dir_failed">保存失败：目录不可写或路径非法</string>
+
+    <string name="mirror_auto">自动（镜像优先，失败回退官方）</string>
+    <string name="mirror_only">仅镜像源（BMCLAPI）</string>
+    <string name="mirror_official">仅官方源（Mojang）</string>
+    <string name="mirror_title">下载源设置</string>
+    <string name="mirror_body">用于 Minecraft 版本清单 / 客户端 / 资源 / 依赖库的下载。国内网络建议使用镜像或自动。</string>
+    <string name="mirror_note">注意：下载源改动对下一次下载/启动生效；Java（Adoptium）仍走官方源。</string>
+
+    <string name="advanced_args_title">高级启动参数</string>
+    <string name="jvm_args_label">JVM 参数（空格分隔，如 -XX:+UseG1GC）</string>
+    <string name="game_args_label">游戏参数（空格分隔，如 --fullscreen）</string>
+
+    <string name="mc_path_title">MC 路径设置</string>
+    <string name="mc_path_label">安装位置</string>
+    <string name="mc_path_default">默认文件夹</string>
+    <string name="mc_path_launcher">启动器文件夹</string>
+    <string name="mc_path_custom">自定义</string>
+    <string name="mc_dir_dialog">选择 Minecraft 文件夹</string>
+    <string name="mc_version_title">MC 版本选择</string>
+    <string name="mc_version_label">版本</string>
+    <string name="mc_refresh">刷新列表</string>
+    <string name="java_find_again">重新查找</string>
+    <string name="username_title">用户名设置</string>
+    <string name="username_label">游戏内昵称</string>
+    <string name="memory_title">内存分配</string>
+    <string name="choose_java">选择 Java</string>
+
+    <string name="snack_java_index_done">Java 索引完成，找到 %1$s 个</string>
+    <string name="snack_java_index_failed">Java 索引失败: %1$s</string>
+    <string name="snack_login_ok">登录成功: %1$s</string>
+    <string name="snack_login_failed">登录失败: %1$s</string>
+    <string name="snack_instance_launching">实例「%1$s」启动中...（日志见「日志」页）</string>
+    <string name="snack_settings_saved">设置已保存</string>
+
+    <string name="sidebar_launch">启动</string>
+    <string name="sidebar_launch_mc">启动 Minecraft</string>
+    <string name="sidebar_download">下载</string>
+    <string name="sidebar_mc_download">Minecraft 下载</string>
+    <string name="sidebar_java_download">Java 下载</string>
+    <string name="sidebar_instances">实例</string>
+    <string name="sidebar_multi_instance">多实例管理</string>
+    <string name="sidebar_logs">日志</string>
+    <string name="sidebar_log_panel">日志面板</string>
+    <string name="sidebar_settings">设置</string>
+    <string name="sidebar_account">账户</string>
+    <string name="sidebar_mc_path">MC 路径</string>
+    <string name="sidebar_mc_version">MC 版本</string>
+    <string name="sidebar_username">用户名</string>
+    <string name="sidebar_java">Java</string>
+    <string name="sidebar_memory">内存</string>
+    <string name="sidebar_mirror">下载源</string>
+    <string name="sidebar_advanced">高级参数</string>
+    <string name="sidebar_data_dir">数据目录</string>
+
+    <string name="launch_need_selection">请先选择 Java / MC 路径 / 版本</string>
+    <string name="launch_starting">启动中...</string>
+    <string name="launch_starting_bg">启动中...（后台执行，日志见「日志」页）</string>
+    <string name="launch_game_ready">游戏窗口已弹出</string>
+    <string name="launch_game_exited">游戏已退出</string>
+    <string name="launch_java_index_done">Java 索引完成: 找到 %1$s 个</string>
+    <string name="launch_java_index_failed">Java 索引失败: %1$s</string>
+    <string name="launch_indexing">正在索引 Java...</string>
+    <string name="launch_index_busy">索引正在进行中或已在运行</string>
+    <string name="account_online">正版</string>
+    <string name="account_offline">离线</string>
+    <string name="account_value">%1$s (%2$s)</string>
+
+    <string name="back_to_launch">返回启动页</string>
+    <string name="download_version_title">下载 %1$s</string>
+    <string name="download_name_hint">为这个游戏环境起个名字（实例名/文件夹名）。默认使用版本号。</string>
+    <string name="instance_name">实例名称</string>
+    <string name="download_name_exists">已存在同名文件夹时会被拒绝。</string>
+    <string name="progress_fetching">获取中...</string>
+    <string name="progress_extracting">解压中...</string>
+    <string name="eta_unknown">剩余 --</string>
+    <string name="eta_seconds">剩余 %1$s 秒</string>
+    <string name="eta_min_sec">剩余 %1$s 分 %2$s 秒</string>
+    <string name="eta_hour_min">剩余 %1$s 时 %2$s 分</string>
+
+    <string name="logs_title">日志面板</string>
+    <string name="logs_empty">暂无日志…</string>
+
+    <string name="accounts_title">账户管理</string>
+    <string name="accounts_empty">暂无账户，请添加离线账户或登录 Microsoft 账户</string>
+    <string name="nickname">昵称</string>
+    <string name="add_offline">添加离线账户</string>
+    <string name="device_code_hint">请在浏览器打开以下链接并输入代码</string>
+    <string name="open_browser">打开浏览器</string>
+    <string name="copy_code">复制代码</string>
+    <string name="copied_code">已复制代码到剪贴板</string>
+    <string name="waiting_auth">等待授权中...</string>
+    <string name="microsoft_login">Microsoft 登录</string>
+    <string name="account_microsoft">Microsoft 正版 (%1$s)</string>
+    <string name="account_offline_label">离线账户</string>
+    <string name="cd_current_account">当前账户</string>
+    <string name="cd_delete">删除</string>
+    <string name="cannot_open_browser">无法打开浏览器，请手动访问: %1$s</string>
+
+    <string name="instances_title">游戏实例</string>
+    <string name="instances_intro">实例与版本文件夹合一：在「下载」页下载 Minecraft 时输入名称（默认版本号）即创建实例，每个实例拥有独立存档与设置。</string>
+    <string name="instances_empty">还没有实例。去「下载」页选择一个版本下载，输入名称即可创建。</string>
+    <string name="instance_meta">版本 %1$s  ·  内存 %2$s</string>
+    <string name="cd_instance_settings">实例设置</string>
+    <string name="instance_deleted">已删除实例 %1$s</string>
+    <string name="instance_delete_failed">删除实例失败</string>
+    <string name="cd_delete_instance">删除实例</string>
+    <string name="instance_settings_title">实例设置 - %1$s</string>
+    <string name="field_name">名称</string>
+    <string name="field_game_version">游戏版本（如 1.21.1）</string>
+    <string name="field_java_path">Java 路径（留空自动选择）</string>
+    <string name="field_max_memory">最大内存（如 4096M / 4G）</string>
+    <string name="field_extra_jvm">额外 JVM 参数（空格分隔）</string>
+    <string name="instance_game_dir">游戏目录：%1$s（不可修改）</string>
+    <string name="instance_saved">已保存实例 %1$s 的设置</string>
+    <string name="instance_save_failed">保存失败: %1$s</string>
+</resources>

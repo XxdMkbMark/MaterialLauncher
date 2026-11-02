@@ -55,6 +55,30 @@ import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.api.LaunchRequest
 import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.api.LauncherEvent
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.account_offline
+import cc.lanternmc.materiallauncher.generated.resources.account_online
+import cc.lanternmc.materiallauncher.generated.resources.account_value
+import cc.lanternmc.materiallauncher.generated.resources.app_name
+import cc.lanternmc.materiallauncher.generated.resources.launch_game_exited
+import cc.lanternmc.materiallauncher.generated.resources.launch_game_ready
+import cc.lanternmc.materiallauncher.generated.resources.launch_index_busy
+import cc.lanternmc.materiallauncher.generated.resources.launch_indexing
+import cc.lanternmc.materiallauncher.generated.resources.launch_java_index_done
+import cc.lanternmc.materiallauncher.generated.resources.launch_java_index_failed
+import cc.lanternmc.materiallauncher.generated.resources.launch_need_selection
+import cc.lanternmc.materiallauncher.generated.resources.launch_starting
+import cc.lanternmc.materiallauncher.generated.resources.launch_starting_bg
+import cc.lanternmc.materiallauncher.generated.resources.not_selected
+import cc.lanternmc.materiallauncher.generated.resources.not_set
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_account
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_java
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_launch_mc
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_mc_path
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_mc_version
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_memory
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun LaunchPage(
@@ -74,6 +98,17 @@ fun LaunchPage(
     var selectedMcVersion by remember { mutableStateOf("") }
     var memValue by remember { mutableIntStateOf(512) }
     var status by remember { mutableStateOf("") }
+    val needSelection = stringResource(Res.string.launch_need_selection)
+    val starting = stringResource(Res.string.launch_starting)
+    val startingBg = stringResource(Res.string.launch_starting_bg)
+    val gameReady = stringResource(Res.string.launch_game_ready)
+    val gameExited = stringResource(Res.string.launch_game_exited)
+    val indexing = stringResource(Res.string.launch_indexing)
+    val indexBusy = stringResource(Res.string.launch_index_busy)
+    val notSet = stringResource(Res.string.not_set)
+    val notSelected = stringResource(Res.string.not_selected)
+    val onlineLabel = stringResource(Res.string.account_online)
+    val offlineLabel = stringResource(Res.string.account_offline)
 
     fun refreshMcVersions() {
         scope.launch {
@@ -102,9 +137,9 @@ fun LaunchPage(
 
     val doLaunch: () -> Unit = {
         if (selectedJava.isBlank() || config?.minecraft?.path.isNullOrBlank() || selectedMcVersion.isBlank()) {
-            status = "请先选择 Java / MC 路径 / 版本"
+            status = needSelection
         } else {
-            status = "启动中..."
+            status = starting
             // 异步启动：完整流程（下载/校验/拉起）在启动器自己的协程中执行，
             // 不会因 UI 组合离开而被取消。
             api.launchMinecraftAsync(
@@ -122,7 +157,7 @@ fun LaunchPage(
                     isolateVersion = true,
                 ),
             )
-            status = "启动中...（后台执行，日志见「日志」页）"
+            status = startingBg
         }
     }
 
@@ -154,8 +189,8 @@ fun LaunchPage(
     LaunchedEffect(events) {
         events.collect { event ->
             when (event) {
-                is LauncherEvent.GameReady -> status = "游戏窗口已弹出"
-                is LauncherEvent.GameExited -> status = "游戏已退出"
+                is LauncherEvent.GameReady -> status = gameReady
+                is LauncherEvent.GameExited -> status = gameExited
                 is LauncherEvent.JavaIndexFound -> {
                     if (javas.none { it.path == event.installation.path }) {
                         javas.add(event.installation)
@@ -163,10 +198,10 @@ fun LaunchPage(
                 }
                 is LauncherEvent.JavaIndexCompleted -> {
                     refreshJavas()
-                    status = "Java 索引完成: 找到 ${event.installations.size} 个"
+                    status = getString(Res.string.launch_java_index_done, event.installations.size.toString())
                     onOpenSettingsDialog(null)
                 }
-                is LauncherEvent.JavaIndexError -> status = "Java 索引失败: ${event.message}"
+                is LauncherEvent.JavaIndexError -> status = getString(Res.string.launch_java_index_failed, event.message)
                 else -> Unit
             }
         }
@@ -184,7 +219,7 @@ fun LaunchPage(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         Text(
-            text = "Material Launcher",
+            text = stringResource(Res.string.app_name),
             style = MaterialTheme.typography.headlineMedium,
             fontWeight = FontWeight.Medium,
         )
@@ -199,10 +234,12 @@ fun LaunchPage(
                 modifier = Modifier.height(48.dp),
                 shape = RoundedCornerShape(100),
             ) {
-                Text("启动 Minecraft", fontSize = 16.sp)
+                Text(stringResource(Res.string.sidebar_launch_mc), fontSize = 16.sp)
             }
             Text(
                 text = status,
+                // 英文状态句比中文长，占满按钮右侧剩余宽度并允许换行，避免挤出固定窗口。
+                modifier = Modifier.weight(1f),
                 color = Color(0xFF44C835),
                 fontWeight = FontWeight.Medium,
                 style = MaterialTheme.typography.bodyMedium,
@@ -217,24 +254,28 @@ fun LaunchPage(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SettingCard("MC 路径", config?.minecraft?.path ?: "未设置", Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.MC_PATH) }
-                SettingCard("MC 版本", selectedMcVersion.ifBlank { "未选择" }, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.MC_VERSION) }
+                SettingCard(stringResource(Res.string.sidebar_mc_path), config?.minecraft?.path ?: notSet, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.MC_PATH) }
+                SettingCard(stringResource(Res.string.sidebar_mc_version), selectedMcVersion.ifBlank { notSelected }, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.MC_VERSION) }
             }
             Row(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
-                SettingCard("Java", selectedJava.ifBlank { "未选择" }, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.JAVA) }
-                SettingCard("内存", memLabel, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.MEM) }
+                SettingCard(stringResource(Res.string.sidebar_java), selectedJava.ifBlank { notSelected }, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.JAVA) }
+                SettingCard(stringResource(Res.string.sidebar_memory), memLabel, Modifier.weight(1f)) { onOpenSettingsDialog(SettingsDialog.MEM) }
             }
             Row(
                 modifier = Modifier.weight(1f).fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
                 SettingCard(
-                    label = "账户",
+                    label = stringResource(Res.string.sidebar_account),
                     value = selectedAccount?.let { acc ->
-                        "${acc.username} (${if (acc.type == "online") "正版" else "离线"})"
+                        stringResource(
+                            Res.string.account_value,
+                            acc.username,
+                            if (acc.type == "online") onlineLabel else offlineLabel,
+                        )
                     } ?: config?.username?.ifBlank { "TestUser" } ?: "TestUser",
                     modifier = Modifier.weight(1f),
                     onClick = onOpenAccountDialog,
@@ -256,9 +297,9 @@ fun LaunchPage(
         selectedJava = selectedJava,
         onSelectedJavaChange = { selectedJava = it },
         onRescanJava = {
-            status = "正在索引 Java..."
+            status = indexing
             val started = api.refreshJavaIndex()
-            if (!started) status = "索引正在进行中或已在运行"
+            if (!started) status = indexBusy
         },
         memValue = memValue,
         onMemValueChange = { memValue = it },

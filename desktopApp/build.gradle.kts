@@ -37,6 +37,12 @@ dependencies {
     testImplementation(libs.kotlin.testJunit)
     testImplementation(libs.junit)
     implementation(libs.androidx.lifecycle.viewmodelCompose)
+    implementation(compose.components.resources)
+}
+
+compose.resources {
+    publicResClass = true
+    packageOfResClass = "cc.lanternmc.materiallauncher.generated.resources"
 }
 
 compose.desktop {

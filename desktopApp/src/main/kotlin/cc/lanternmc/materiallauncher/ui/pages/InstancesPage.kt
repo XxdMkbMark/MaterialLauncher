@@ -50,6 +50,29 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import cc.lanternmc.materiallauncher.api.GameInstance
 import cc.lanternmc.materiallauncher.api.LauncherApi
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.action_cancel
+import cc.lanternmc.materiallauncher.generated.resources.action_launch
+import cc.lanternmc.materiallauncher.generated.resources.action_save
+import cc.lanternmc.materiallauncher.generated.resources.cd_delete_instance
+import cc.lanternmc.materiallauncher.generated.resources.cd_instance_settings
+import cc.lanternmc.materiallauncher.generated.resources.field_extra_jvm
+import cc.lanternmc.materiallauncher.generated.resources.field_game_version
+import cc.lanternmc.materiallauncher.generated.resources.field_java_path
+import cc.lanternmc.materiallauncher.generated.resources.field_max_memory
+import cc.lanternmc.materiallauncher.generated.resources.field_name
+import cc.lanternmc.materiallauncher.generated.resources.instance_delete_failed
+import cc.lanternmc.materiallauncher.generated.resources.instance_deleted
+import cc.lanternmc.materiallauncher.generated.resources.instance_game_dir
+import cc.lanternmc.materiallauncher.generated.resources.instance_meta
+import cc.lanternmc.materiallauncher.generated.resources.instance_save_failed
+import cc.lanternmc.materiallauncher.generated.resources.instance_saved
+import cc.lanternmc.materiallauncher.generated.resources.instance_settings_title
+import cc.lanternmc.materiallauncher.generated.resources.instances_empty
+import cc.lanternmc.materiallauncher.generated.resources.instances_intro
+import cc.lanternmc.materiallauncher.generated.resources.instances_title
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * 实例管理页：列出所有已下载的命名实例，支持启动 / 删除。
@@ -77,18 +100,18 @@ fun InstancesPage(
 
     Column(Modifier.fillMaxSize().padding(24.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("游戏实例", style = MaterialTheme.typography.headlineMedium)
+            Text(stringResource(Res.string.instances_title), style = MaterialTheme.typography.headlineMedium)
         }
 
         Text(
-            "实例与版本文件夹合一：在「下载」页下载 Minecraft 时输入名称（默认版本号）即创建实例，每个实例拥有独立存档与设置。",
+            stringResource(Res.string.instances_intro),
             color = MaterialTheme.colorScheme.onSurfaceVariant,
             style = MaterialTheme.typography.bodySmall,
         )
 
         if (instances.isEmpty()) {
             Text(
-                "还没有实例。去「下载」页选择一个版本下载，输入名称即可创建。",
+                stringResource(Res.string.instances_empty),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -104,7 +127,7 @@ fun InstancesPage(
                         Column(Modifier.weight(1f)) {
                             Text(instance.name, style = MaterialTheme.typography.titleMedium)
                             Text(
-                                "版本 ${instance.versionId}  ·  内存 ${instance.maxMemory}",
+                                stringResource(Res.string.instance_meta, instance.versionId, instance.maxMemory),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -118,23 +141,23 @@ fun InstancesPage(
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             OutlinedButton(onClick = { onLaunchInstance(instance) }) {
                                 Icon(Icons.Default.PlayArrow, contentDescription = null)
-                                Text("启动")
+                                Text(stringResource(Res.string.action_launch))
                             }
                             IconButton(onClick = { editing = instance }) {
-                                Icon(Icons.Default.Settings, contentDescription = "实例设置")
+                                Icon(Icons.Default.Settings, contentDescription = stringResource(Res.string.cd_instance_settings))
                             }
                             IconButton(onClick = {
                                 scope.launch {
                                     val ok = api.deleteInstance(instance.id)
                                     if (ok) {
                                         refresh()
-                                        onMessage("已删除实例 ${instance.name}")
+                                        onMessage(getString(Res.string.instance_deleted, instance.name))
                                     } else {
-                                        onMessage("删除实例失败")
+                                        onMessage(getString(Res.string.instance_delete_failed))
                                     }
                                 }
                             }) {
-                                Icon(Icons.Default.Delete, contentDescription = "删除实例")
+                                Icon(Icons.Default.Delete, contentDescription = stringResource(Res.string.cd_delete_instance))
                             }
                         }
                     }
@@ -153,46 +176,46 @@ fun InstancesPage(
 
         AlertDialog(
             onDismissRequest = { editing = null },
-            title = { Text("实例设置 - ${instance.name}") },
+            title = { Text(stringResource(Res.string.instance_settings_title, instance.name)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     OutlinedTextField(
                         value = name,
                         onValueChange = { name = it },
-                        label = { Text("名称") },
+                        label = { Text(stringResource(Res.string.field_name)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = versionId,
                         onValueChange = { versionId = it },
-                        label = { Text("游戏版本（如 1.21.1）") },
+                        label = { Text(stringResource(Res.string.field_game_version)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = javaPath,
                         onValueChange = { javaPath = it },
-                        label = { Text("Java 路径（留空自动选择）") },
+                        label = { Text(stringResource(Res.string.field_java_path)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = maxMemory,
                         onValueChange = { maxMemory = it },
-                        label = { Text("最大内存（如 4096M / 4G）") },
+                        label = { Text(stringResource(Res.string.field_max_memory)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     OutlinedTextField(
                         value = jvmArgs,
                         onValueChange = { jvmArgs = it },
-                        label = { Text("额外 JVM 参数（空格分隔）") },
+                        label = { Text(stringResource(Res.string.field_extra_jvm)) },
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth(),
                     )
                     Text(
-                        "游戏目录：${instance.gameDir}（不可修改）",
+                        stringResource(Res.string.instance_game_dir, instance.gameDir),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -214,17 +237,17 @@ fun InstancesPage(
                         }.onSuccess {
                             editing = null
                             refresh()
-                            onMessage("已保存实例 ${instance.name} 的设置")
+                            onMessage(getString(Res.string.instance_saved, instance.name))
                         }.onFailure { e ->
-                            onMessage("保存失败: ${e.message}")
+                            onMessage(getString(Res.string.instance_save_failed, e.message.orEmpty()))
                         }
                     }
                 }) {
-                    Text("保存")
+                    Text(stringResource(Res.string.action_save))
                 }
             },
             dismissButton = {
-                TextButton(onClick = { editing = null }) { Text("取消") }
+                TextButton(onClick = { editing = null }) { Text(stringResource(Res.string.action_cancel)) }
             },
         )
     }

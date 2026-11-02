@@ -41,6 +41,12 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.flow.Flow
 import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.api.LauncherEvent
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.action_back
+import cc.lanternmc.materiallauncher.generated.resources.action_clear
+import cc.lanternmc.materiallauncher.generated.resources.logs_empty
+import cc.lanternmc.materiallauncher.generated.resources.logs_title
+import org.jetbrains.compose.resources.stringResource
 
 private const val MAX_LOG_LINES = 2000
 
@@ -98,14 +104,14 @@ fun LogsPage(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text("日志面板", style = MaterialTheme.typography.headlineMedium)
-            TextButton(onClick = { lines.clear() }) { Text("清空") }
-            TextButton(onClick = onBack) { Text("返回") }
+            Text(stringResource(Res.string.logs_title), style = MaterialTheme.typography.headlineMedium)
+            TextButton(onClick = { lines.clear() }) { Text(stringResource(Res.string.action_clear)) }
+            TextButton(onClick = onBack) { Text(stringResource(Res.string.action_back)) }
         }
         Box(Modifier.fillMaxSize().padding(top = 8.dp)) {
             if (lines.isEmpty()) {
                 Text(
-                    "暂无日志…",
+                    stringResource(Res.string.logs_empty),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.Center),
                 )

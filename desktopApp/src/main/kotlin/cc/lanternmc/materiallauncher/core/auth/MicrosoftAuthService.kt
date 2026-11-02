@@ -35,14 +35,12 @@ import cc.lanternmc.materiallauncher.core.util.HttpUtil
 import kotlin.time.Duration.Companion.milliseconds
 
 /**
- * Microsoft 正版验证（OAuth2 设备码流）：
- * 设备码 → 轮询 OAuth token → Xbox Live → XSTS → Minecraft login_with_xbox → 玩家资料。
+ * Microsoft Authentication (OAuth 2.0 Device Authorization Grant):
+ * Device code → Poll for OAuth token → Xbox Live → XSTS → Minecraft `login_with_xbox` → Player profile.
  */
 object MicrosoftAuthService {
 
-    // Material Launcher 自有 Azure 应用（已通过 Mojang/Xbox Live 注册许可名单，
-    // 2026-08 批准）。公共客户端，设备码流无需 client secret。
-    // 自建 Azure 应用未注册 Xbox Live，会在 login_with_xbox 阶段返回 403 "Invalid app registration"。
+
     private const val CLIENT_ID = "496b4e7d-7115-4ffb-bdb9-04108320023d"
 
     private const val DEVICE_CODE_URL = "https://login.microsoftonline.com/consumers/oauth2/v2.0/devicecode"
@@ -62,7 +60,7 @@ object MicrosoftAuthService {
     )
 
     /**
-     * ① 请求设备码，返回用户需要访问的链接 + 输入码。
+     * Request
      */
     suspend fun requestDeviceCode(): DeviceCodeInfo {
         val body = HttpUtil.postForm(
@@ -83,10 +81,6 @@ object MicrosoftAuthService {
         )
     }
 
-    /**
-     * 按 interval 轮询 token 接口，直到用户完成授权或设备码过期。
-     * [onStatus] 在每次轮询前回调，用于向 UI 推送等待状态。
-     */
     suspend fun pollForToken(info: DeviceCodeInfo, onStatus: suspend (String) -> Unit): OAuthToken {
         val deadline = System.currentTimeMillis() + info.expiresIn * 1000
         val intervalMillis = info.interval.coerceAtLeast(1) * 1000
@@ -121,9 +115,6 @@ object MicrosoftAuthService {
         throw IllegalStateException("设备码已过期，请重新登录")
     }
 
-    /**
-     * ②~⑤ 把微软 access token 逐级换成 Minecraft 正版账户。
-     */
     suspend fun exchangeToAccount(msAccessToken: String, msRefreshToken: String): Account {
         val xboxResp = HttpUtil.postJson(
             XBOX_AUTH_URL,
@@ -190,9 +181,6 @@ object MicrosoftAuthService {
         )
     }
 
-    /**
-     * 用 refresh token 续期微软 token 后重走 ②~⑤。
-     */
     suspend fun refreshAccount(account: Account): Account {
         if (account.refreshToken.isBlank()) {
             throw IllegalStateException("账户缺少 refresh token，请重新登录")

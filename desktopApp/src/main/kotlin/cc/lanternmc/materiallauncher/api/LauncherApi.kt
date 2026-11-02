@@ -18,30 +18,23 @@ package cc.lanternmc.materiallauncher.api
 
 import kotlinx.coroutines.flow.SharedFlow
 
-/**
- * 前端调用后端的能力接口（契约层）。
- *
- * 前端（ui 包）只依赖本接口，后端（core 包）负责实现。
- * suspend 方法会被阻塞在后台线程执行，不会卡住 UI。
- */
 interface LauncherApi {
-    // 配置
+    // Config
     suspend fun getDownloadConfig(): DownloadConfig
     suspend fun saveDownloadConfig(config: DownloadConfig)
     suspend fun getDefaultMinecraftDir(): String
     suspend fun getLauncherMinecraftDir(): String
     suspend fun getLauncherJavaDir(): String
 
-    /** 当前启动器数据目录（config/auth/instances 存放处）。 */
     fun getDataDirectory(): String
 
     /**
-     * 设置自定义数据目录（写入 data-dir.txt 标志文件），下次启动生效。
-     * @return 是否写入成功
+     * Set a custom data directory
+     * @return Whether the write operation was successful
      */
     fun setDataDirectory(dir: String): Boolean
 
-    // 启动器本体配置（launcher.toml：主题 / 语言 / 下载默认值）
+    // Launcher configuration (launcher.toml: theme / language / download defaults)）
     suspend fun getLauncherSettings(): LauncherSettings
     suspend fun saveLauncherSettings(settings: LauncherSettings)
 

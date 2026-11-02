@@ -64,6 +64,27 @@ import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.DeviceCodeInfo
 import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.api.LauncherEvent
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.account_microsoft
+import cc.lanternmc.materiallauncher.generated.resources.account_offline_label
+import cc.lanternmc.materiallauncher.generated.resources.accounts_empty
+import cc.lanternmc.materiallauncher.generated.resources.accounts_title
+import cc.lanternmc.materiallauncher.generated.resources.action_add
+import cc.lanternmc.materiallauncher.generated.resources.action_close
+import cc.lanternmc.materiallauncher.generated.resources.add_offline
+import cc.lanternmc.materiallauncher.generated.resources.cannot_open_browser
+import cc.lanternmc.materiallauncher.generated.resources.cd_current_account
+import cc.lanternmc.materiallauncher.generated.resources.cd_delete
+import cc.lanternmc.materiallauncher.generated.resources.copied_code
+import cc.lanternmc.materiallauncher.generated.resources.copy_code
+import cc.lanternmc.materiallauncher.generated.resources.device_code_hint
+import cc.lanternmc.materiallauncher.generated.resources.microsoft_login
+import cc.lanternmc.materiallauncher.generated.resources.nickname
+import cc.lanternmc.materiallauncher.generated.resources.open_browser
+import cc.lanternmc.materiallauncher.generated.resources.snack_login_ok
+import cc.lanternmc.materiallauncher.generated.resources.waiting_auth
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * 账户管理对话框：多账户列表 / 添加离线账户 / Microsoft 设备码登录。
@@ -85,6 +106,9 @@ fun AccountDialog(
     var deviceCode by remember { mutableStateOf<DeviceCodeInfo?>(null) }
     var loginStatus by remember { mutableStateOf("") }
     var loginError by remember { mutableStateOf("") }
+    val copiedCode = stringResource(Res.string.copied_code)
+    val waitingAuth = stringResource(Res.string.waiting_auth)
+    val microsoftLogin = stringResource(Res.string.microsoft_login)
 
     suspend fun refreshAccounts() {
         val list = runCatching { api.getAccounts() }.getOrDefault(emptyList())
@@ -96,7 +120,9 @@ fun AccountDialog(
         val opened = runCatching {
             java.awt.Desktop.getDesktop().browse(java.net.URI.create(url))
         }.isSuccess
-        if (!opened) loginError = "无法打开浏览器，请手动访问: $url"
+        if (!opened) {
+            scope.launch { loginError = getString(Res.string.cannot_open_browser, url) }
+        }
     }
 
     LaunchedEffect(Unit) { refreshAccounts() }
@@ -117,7 +143,7 @@ fun AccountDialog(
                 is LauncherEvent.AuthCompleted -> {
                     loggingIn = false
                     deviceCode = null
-                    loginStatus = "登录成功: ${event.account.username}"
+                    loginStatus = getString(Res.string.snack_login_ok, event.account.username)
                     onSelectAccount(event.account.id)
                     scope.launch { refreshAccounts() }
                 }
@@ -134,11 +160,11 @@ fun AccountDialog(
     Dialog(onDismissRequest = onDismiss) {
         Surface(shape = MaterialTheme.shapes.large, color = MaterialTheme.colorScheme.surface) {
             Column(Modifier.width(480.dp).padding(24.dp)) {
-                Text("账户管理", style = MaterialTheme.typography.titleLarge)
+                Text(stringResource(Res.string.accounts_title), style = MaterialTheme.typography.titleLarge)
 
                 if (accounts.isEmpty()) {
                     Text(
-                        text = "暂无账户，请添加离线账户或登录 Microsoft 账户",
+                        text = stringResource(Res.string.accounts_empty),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(top = 12.dp),
@@ -176,7 +202,7 @@ fun AccountDialog(
                             onValueChange = { offlineName = it },
                             modifier = Modifier.weight(1f),
                             singleLine = true,
-                            label = { Text("昵称") },
+                            label = { Text(stringResource(Res.string.nickname)) },
                         )
                         Button(onClick = {
                             scope.launch {
@@ -186,10 +212,10 @@ fun AccountDialog(
                                 addingOffline = false
                                 refreshAccounts()
                             }
-                        }) { Text("添加") }
+                        }) { Text(stringResource(Res.string.action_add)) }
                     }
                 } else {
-                    TextButton(onClick = { addingOffline = true }) { Text("添加离线账户") }
+                    TextButton(onClick = { addingOffline = true }) { Text(stringResource(Res.string.add_offline)) }
                 }
 
                 if (deviceCode != null) {
@@ -203,7 +229,7 @@ fun AccountDialog(
                             .padding(16.dp),
                     ) {
                         Text(
-                            text = "请在浏览器打开以下链接并输入代码",
+                            text = stringResource(Res.string.device_code_hint),
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -224,14 +250,14 @@ fun AccountDialog(
                             modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            Button(onClick = { openBrowser(code.verificationUri) }) { Text("打开浏览器") }
+                            Button(onClick = { openBrowser(code.verificationUri) }) { Text(stringResource(Res.string.open_browser)) }
                             TextButton(onClick = {
                                 scope.launch {
                                     @OptIn(ExperimentalComposeUiApi::class)
                                     clipboard.setClipEntry(ClipEntry(StringSelection(code.userCode)))
                                 }
-                                loginStatus = "已复制代码到剪贴板"
-                            }) { Text("复制代码") }
+                                loginStatus = copiedCode
+                            }) { Text(stringResource(Res.string.copy_code)) }
                         }
                     }
                 }
@@ -264,14 +290,14 @@ fun AccountDialog(
                     enabled = !loggingIn && deviceCode == null,
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                 ) {
-                    Text(if (loggingIn) "等待授权中..." else "Microsoft 登录")
+                    Text(if (loggingIn) waitingAuth else microsoftLogin)
                 }
 
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 12.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("关闭") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_close)) }
                 }
             }
         }
@@ -304,11 +330,10 @@ private fun AccountRow(
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
             )
+            val microsoftAccount = stringResource(Res.string.account_microsoft, account.userType)
+            val offlineAccount = stringResource(Res.string.account_offline_label)
             Text(
-                text = when (account.type) {
-                    "online" -> "Microsoft 正版 (${account.userType})"
-                    else -> "离线账户"
-                },
+                text = if (account.type == "online") microsoftAccount else offlineAccount,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
@@ -316,14 +341,14 @@ private fun AccountRow(
         if (selected) {
             Icon(
                 imageVector = Icons.Default.Check,
-                contentDescription = "当前账户",
+                contentDescription = stringResource(Res.string.cd_current_account),
                 tint = MaterialTheme.colorScheme.primary,
             )
         }
         IconButton(onClick = onDelete) {
             Icon(
                 imageVector = Icons.Default.Delete,
-                contentDescription = "删除",
+                contentDescription = stringResource(Res.string.cd_delete),
                 tint = MaterialTheme.colorScheme.error,
             )
         }

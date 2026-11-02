@@ -41,7 +41,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.page_start
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -54,7 +57,7 @@ fun StartSettingsPage(navController: NavHostController) {
                     topBar = {
                         TopAppBar(
                             title = {
-                                Text("启动")
+                                Text(stringResource(Res.string.page_start))
                             },
                             navigationIcon = {
                                 IconButton(  // 返回按钮

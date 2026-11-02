@@ -151,7 +151,8 @@ fun LauncherSidebar(
             modifier = Modifier
                 .align(Alignment.CenterStart)
                 .offset(x = 44.dp)
-                .width(200.dp)
+                // 英文子项 “Advanced arguments” 比中文长，200.dp 会贴边。
+                .width(240.dp)
                 .fillMaxHeight(),
             enter = fadeIn() + expandHorizontally(expandFrom = Alignment.Start),
             exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.Start),

@@ -41,6 +41,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.not_selected
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * 下拉选择字段（前端通用组件）。
@@ -74,7 +77,7 @@ fun DropdownField(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = display.ifBlank { "未选择" },
+                        text = display.ifBlank { stringResource(Res.string.not_selected) },
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodyMedium,

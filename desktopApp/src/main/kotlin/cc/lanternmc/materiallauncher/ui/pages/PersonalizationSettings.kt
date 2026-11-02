@@ -36,7 +36,10 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.page_personalization
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import org.jetbrains.compose.resources.stringResource
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,7 +52,7 @@ fun PersonalizationSettingsPage(navController: NavHostController) {
                     topBar = {
                         TopAppBar(
                             title = {
-                                Text("个性化")
+                                Text(stringResource(Res.string.page_personalization))
                             },
                             navigationIcon = {
                                 IconButton(  // 返回按钮

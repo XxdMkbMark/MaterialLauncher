@@ -34,7 +34,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.cd_expand
+import cc.lanternmc.materiallauncher.generated.resources.cd_home
+import cc.lanternmc.materiallauncher.generated.resources.home_welcome
+import cc.lanternmc.materiallauncher.generated.resources.home_what_is_this
 import cc.lanternmc.materiallauncher.ui.components.UnderConstructionDialog
+import org.jetbrains.compose.resources.stringResource
 import cc.lanternmc.materiallauncher.ui.navigation.AppNavHost
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
@@ -54,9 +60,9 @@ fun HomePage(navController: NavHostController) {
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
                 ) {
-                    Text("欢迎使用 Material Launcher", Modifier.padding(16.dp), fontSize = 20.sp)
+                    Text(stringResource(Res.string.home_welcome), Modifier.padding(16.dp), fontSize = 20.sp)
                     Button(onClick = { showDialog = true }) {
-                        Text("这是什么?")
+                        Text(stringResource(Res.string.home_what_is_this))
                     }
                 }
             }
@@ -92,7 +98,8 @@ fun Home(modifier: Modifier = Modifier) {
                 NavigationRail(
                     modifier = Modifier
                         .fillMaxHeight()
-                        .width(72.dp),
+                        // 英文标签 Download / Versions / Settings 比两个汉字宽，72.dp 会裁掉末尾字母。
+                        .width(96.dp),
                     containerColor = MaterialTheme.colorScheme.surface,
                 ) {
                     Column(
@@ -112,7 +119,7 @@ fun Home(modifier: Modifier = Modifier) {
                                 icon = {
                                     Icon(
                                         imageVector = Icons.Rounded.Menu,
-                                        contentDescription = "展开",
+                                        contentDescription = stringResource(Res.string.cd_expand),
                                     )
                                 },
                             )
@@ -131,7 +138,7 @@ fun Home(modifier: Modifier = Modifier) {
                             ) {
                                 Icon(
                                     imageVector = Icons.Rounded.Home,
-                                    contentDescription = "主页",
+                                    contentDescription = stringResource(Res.string.cd_home),
                                     modifier = Modifier.size(24.dp),
                                 )
                             }
@@ -153,7 +160,7 @@ fun Home(modifier: Modifier = Modifier) {
                                     icon = {
                                         Icon(destination.icon, contentDescription = "")
                                     },
-                                    label = { Text(text = destination.label, textAlign = TextAlign.Center) }
+                                    label = { Text(text = stringResource(destination.label), textAlign = TextAlign.Center) }
                                 )
                             }
 

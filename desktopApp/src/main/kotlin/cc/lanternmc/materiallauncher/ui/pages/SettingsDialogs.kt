@@ -49,7 +49,28 @@ import kotlinx.coroutines.launch
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.JavaInstallation
 import cc.lanternmc.materiallauncher.api.LauncherApi
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.action_apply
+import cc.lanternmc.materiallauncher.generated.resources.action_cancel
+import cc.lanternmc.materiallauncher.generated.resources.action_close
+import cc.lanternmc.materiallauncher.generated.resources.choose_java
+import cc.lanternmc.materiallauncher.generated.resources.java_find_again
+import cc.lanternmc.materiallauncher.generated.resources.mc_dir_dialog
+import cc.lanternmc.materiallauncher.generated.resources.mc_path_custom
+import cc.lanternmc.materiallauncher.generated.resources.mc_path_default
+import cc.lanternmc.materiallauncher.generated.resources.mc_path_label
+import cc.lanternmc.materiallauncher.generated.resources.mc_path_launcher
+import cc.lanternmc.materiallauncher.generated.resources.mc_path_title
+import cc.lanternmc.materiallauncher.generated.resources.mc_refresh
+import cc.lanternmc.materiallauncher.generated.resources.mc_version_label
+import cc.lanternmc.materiallauncher.generated.resources.mc_version_title
+import cc.lanternmc.materiallauncher.generated.resources.memory_title
+import cc.lanternmc.materiallauncher.generated.resources.not_selected
+import cc.lanternmc.materiallauncher.generated.resources.settings_java_title
+import cc.lanternmc.materiallauncher.generated.resources.username_label
+import cc.lanternmc.materiallauncher.generated.resources.username_title
 import cc.lanternmc.materiallauncher.ui.components.DropdownField
+import org.jetbrains.compose.resources.stringResource
 
 enum class SettingsDialog { MC_PATH, MC_VERSION, JAVA, MEM, USERNAME, ACCOUNT }
 
@@ -87,20 +108,24 @@ fun SettingsDialogs(
 
     if (dialog == SettingsDialog.MC_PATH) {
         Dialog(onDismissRequest = onDismiss) {
-            SettingsCard(title = "MC 路径设置") {
+            SettingsCard(title = stringResource(Res.string.mc_path_title)) {
+                val defaultFolder = stringResource(Res.string.mc_path_default)
+                val launcherFolder = stringResource(Res.string.mc_path_launcher)
+                val customFolder = stringResource(Res.string.mc_path_custom)
+                val chooseFolder = stringResource(Res.string.mc_dir_dialog)
                 DropdownField(
-                    label = "安装位置",
+                    label = stringResource(Res.string.mc_path_label),
                     display = when (mcSourceDraft.value) {
-                        "default" -> "默认文件夹"
-                        "launcher" -> "启动器文件夹"
-                        else -> "自定义"
+                        "default" -> defaultFolder
+                        "launcher" -> launcherFolder
+                        else -> customFolder
                     },
                     options = listOf("default", "launcher", "custom"),
                     getLabel = { source ->
                         when (source) {
-                            "default" -> "默认文件夹"
-                            "launcher" -> "启动器文件夹"
-                            else -> "自定义"
+                            "default" -> defaultFolder
+                            "launcher" -> launcherFolder
+                            else -> customFolder
                         }
                     },
                     onSelect = { mcSourceDraft.value = it },
@@ -119,7 +144,7 @@ fun SettingsDialogs(
                         )
                         Button(onClick = {
                             scope.launch {
-                                val selected = api.openDirectoryDialog("选择 Minecraft 文件夹")
+                                val selected = api.openDirectoryDialog(chooseFolder)
                                 if (!selected.isNullOrBlank()) customPath.value = selected
                             }
                         }) { Text("…") }
@@ -129,10 +154,10 @@ fun SettingsDialogs(
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("取消") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
                     Button(onClick = {
                         onApplyMcPath(mcSourceDraft.value, customPath.value)
-                    }) { Text("应用") }
+                    }) { Text(stringResource(Res.string.action_apply)) }
                 }
             }
         }
@@ -140,19 +165,19 @@ fun SettingsDialogs(
 
     if (dialog == SettingsDialog.MC_VERSION) {
         Dialog(onDismissRequest = onDismiss) {
-            SettingsCard(title = "MC 版本选择") {
+            SettingsCard(title = stringResource(Res.string.mc_version_title)) {
                 DropdownField(
-                    label = "版本",
+                    label = stringResource(Res.string.mc_version_label),
                     display = selectedMcVersion,
                     options = mcVersions,
                     onSelect = onSelectedMcVersionChange,
                 )
-                TextButton(onClick = onRefreshMcVersions) { Text("刷新列表") }
+                TextButton(onClick = onRefreshMcVersions) { Text(stringResource(Res.string.mc_refresh)) }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("关闭") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_close)) }
                 }
             }
         }
@@ -160,18 +185,18 @@ fun SettingsDialogs(
 
     if (dialog == SettingsDialog.JAVA) {
         Dialog(onDismissRequest = onDismiss) {
-            SettingsCard(title = "Java 设置") {
+            SettingsCard(title = stringResource(Res.string.settings_java_title)) {
                 JavaSelectField(
                     javas = javas,
                     selectedPath = selectedJava,
                     onSelect = onSelectedJavaChange,
                 )
-                TextButton(onClick = onRescanJava) { Text("重新查找") }
+                TextButton(onClick = onRescanJava) { Text(stringResource(Res.string.java_find_again)) }
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("关闭") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_close)) }
                 }
             }
         }
@@ -179,21 +204,21 @@ fun SettingsDialogs(
 
     if (dialog == SettingsDialog.USERNAME) {
         Dialog(onDismissRequest = onDismiss) {
-            SettingsCard(title = "用户名设置") {
+            SettingsCard(title = stringResource(Res.string.username_title)) {
                 var draft by remember { mutableStateOf(username) }
                 androidx.compose.material3.OutlinedTextField(
                     value = draft,
                     onValueChange = { draft = it },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    label = { Text("游戏内昵称") },
+                    label = { Text(stringResource(Res.string.username_label)) },
                 )
                 Row(
                     modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("取消") }
-                    Button(onClick = { onApplyUsername(draft.trim()) }) { Text("应用") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) }
+                    Button(onClick = { onApplyUsername(draft.trim()) }) { Text(stringResource(Res.string.action_apply)) }
                 }
             }
         }
@@ -201,7 +226,7 @@ fun SettingsDialogs(
 
     if (dialog == SettingsDialog.MEM) {
         Dialog(onDismissRequest = onDismiss) {
-            SettingsCard(title = "内存分配") {
+            SettingsCard(title = stringResource(Res.string.memory_title)) {
                 Slider(
                     value = memValue.toFloat(),
                     onValueChange = { onMemValueChange(it.toInt()) },
@@ -220,7 +245,7 @@ fun SettingsDialogs(
                     modifier = Modifier.fillMaxWidth().padding(top = 8.dp),
                     horizontalArrangement = Arrangement.End,
                 ) {
-                    TextButton(onClick = onDismiss) { Text("关闭") }
+                    TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_close)) }
                 }
             }
         }
@@ -246,7 +271,7 @@ private fun JavaSelectField(
     var expanded by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxWidth()) {
         Text(
-            text = "选择 Java",
+            text = stringResource(Res.string.choose_java),
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -254,7 +279,7 @@ private fun JavaSelectField(
             OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
                 Text(
                     text = javas.firstOrNull { it.path == selectedPath }?.let { "${it.version} - ${it.path}" }
-                        ?: if (selectedPath.isBlank()) "未选择" else selectedPath,
+                        ?: if (selectedPath.isBlank()) stringResource(Res.string.not_selected) else selectedPath,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )

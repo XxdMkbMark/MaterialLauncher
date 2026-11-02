@@ -40,6 +40,26 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.LauncherApi
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.action_cancel
+import cc.lanternmc.materiallauncher.generated.resources.action_close
+import cc.lanternmc.materiallauncher.generated.resources.action_save
+import cc.lanternmc.materiallauncher.generated.resources.advanced_args_title
+import cc.lanternmc.materiallauncher.generated.resources.data_dir_body
+import cc.lanternmc.materiallauncher.generated.resources.data_dir_empty
+import cc.lanternmc.materiallauncher.generated.resources.data_dir_failed
+import cc.lanternmc.materiallauncher.generated.resources.data_dir_label
+import cc.lanternmc.materiallauncher.generated.resources.data_dir_saved
+import cc.lanternmc.materiallauncher.generated.resources.data_dir_title
+import cc.lanternmc.materiallauncher.generated.resources.game_args_label
+import cc.lanternmc.materiallauncher.generated.resources.jvm_args_label
+import cc.lanternmc.materiallauncher.generated.resources.mirror_auto
+import cc.lanternmc.materiallauncher.generated.resources.mirror_body
+import cc.lanternmc.materiallauncher.generated.resources.mirror_note
+import cc.lanternmc.materiallauncher.generated.resources.mirror_official
+import cc.lanternmc.materiallauncher.generated.resources.mirror_only
+import cc.lanternmc.materiallauncher.generated.resources.mirror_title
+import org.jetbrains.compose.resources.stringResource
 
 /** 高级设置对话框类型（独立于 pages.SettingsDialog，避免改动现有文件）。 */
 enum class AdvancedDialog { MIRROR, ADVANCED_ARGS, DATA_DIR }
@@ -69,14 +89,16 @@ private fun DataDirectoryDialog(
     var current by remember { mutableStateOf(api.getDataDirectory()) }
     var draft by remember { mutableStateOf(current) }
     var message by remember { mutableStateOf<String?>(null) }
+    val emptyDir = stringResource(Res.string.data_dir_empty)
+    val savedDir = stringResource(Res.string.data_dir_saved)
+    val failedDir = stringResource(Res.string.data_dir_failed)
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("数据目录设置") },
+        title = { Text(stringResource(Res.string.data_dir_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Text(
-                    "启动器的配置 / 账户 / 实例清单 / Java 缓存存放在此目录。" +
-                        "当前安装版默认在用户目录（%APPDATA%\\MaterialLauncher），免安装版在 exe 同级 data\\。",
+                    stringResource(Res.string.data_dir_body),
                     style = MaterialTheme.typography.bodySmall,
                 )
                 OutlinedTextField(
@@ -84,7 +106,7 @@ private fun DataDirectoryDialog(
                     onValueChange = { draft = it; message = null },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    label = { Text("数据目录（绝对路径）") },
+                    label = { Text(stringResource(Res.string.data_dir_label)) },
                 )
                 message?.let {
                     Text(it, color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.labelSmall)
@@ -94,17 +116,17 @@ private fun DataDirectoryDialog(
         confirmButton = {
             Button(onClick = {
                 if (draft.isBlank()) {
-                    message = "目录不能为空"
+                    message = emptyDir
                     return@Button
                 }
                 if (api.setDataDirectory(draft)) {
-                    message = "已保存，重启启动器后生效"
+                    message = savedDir
                 } else {
-                    message = "保存失败：目录不可写或路径非法"
+                    message = failedDir
                 }
-            }) { Text("保存") }
+            }) { Text(stringResource(Res.string.action_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("关闭") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_close)) } },
     )
 }
 
@@ -118,16 +140,16 @@ private fun MirrorSourceDialog(
     var draft by remember { mutableStateOf(config?.mirrorSource ?: "auto") }
     val options = listOf("auto", "mirror", "official")
     val labels = mapOf(
-        "auto" to "自动（镜像优先，失败回退官方）",
-        "mirror" to "仅镜像源（BMCLAPI）",
-        "official" to "仅官方源（Mojang）",
+        "auto" to stringResource(Res.string.mirror_auto),
+        "mirror" to stringResource(Res.string.mirror_only),
+        "official" to stringResource(Res.string.mirror_official),
     )
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("下载源设置") },
+        title = { Text(stringResource(Res.string.mirror_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text("用于 Minecraft 版本清单 / 客户端 / 资源 / 依赖库的下载。国内网络建议使用镜像或自动。")
+                Text(stringResource(Res.string.mirror_body))
                 Spacer16()
                 var expanded by remember { mutableStateOf(false) }
                 OutlinedButton(onClick = { expanded = true }, modifier = Modifier.fillMaxWidth()) {
@@ -146,7 +168,7 @@ private fun MirrorSourceDialog(
                 }
                 Spacer16()
                 Text(
-                    "注意：下载源改动对下一次下载/启动生效；Java（Adoptium）仍走官方源。",
+                    stringResource(Res.string.mirror_note),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -155,9 +177,9 @@ private fun MirrorSourceDialog(
         confirmButton = {
             Button(onClick = {
                 onApply(config?.copy(mirrorSource = draft) ?: DownloadConfig(mirrorSource = draft))
-            }) { Text("保存") }
+            }) { Text(stringResource(Res.string.action_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }
 
@@ -172,20 +194,20 @@ private fun AdvancedArgsDialog(
     var gameArgs by remember { mutableStateOf(config?.gameArgs.orEmpty()) }
     androidx.compose.material3.AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("高级启动参数") },
+        title = { Text(stringResource(Res.string.advanced_args_title)) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
                     value = jvmArgs,
                     onValueChange = { jvmArgs = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("JVM 参数（空格分隔，如 -XX:+UseG1GC）") },
+                    label = { Text(stringResource(Res.string.jvm_args_label)) },
                 )
                 OutlinedTextField(
                     value = gameArgs,
                     onValueChange = { gameArgs = it },
                     modifier = Modifier.fillMaxWidth(),
-                    label = { Text("游戏参数（空格分隔，如 --fullscreen）") },
+                    label = { Text(stringResource(Res.string.game_args_label)) },
                 )
             }
         },
@@ -195,9 +217,9 @@ private fun AdvancedArgsDialog(
                     config?.copy(jvmArgs = jvmArgs.trim(), gameArgs = gameArgs.trim())
                         ?: DownloadConfig(jvmArgs = jvmArgs.trim(), gameArgs = gameArgs.trim()),
                 )
-            }) { Text("保存") }
+            }) { Text(stringResource(Res.string.action_save)) }
         },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("取消") } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(Res.string.action_cancel)) } },
     )
 }
 

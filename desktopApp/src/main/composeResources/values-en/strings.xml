@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Material Launcher</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_download">Download</string>
+    <string name="nav_users">Profiles</string>
+    <string name="nav_versions">Versions</string>
+    <string name="nav_settings">Settings</string>
+    <string name="nav_java_settings">Java settings</string>
+    <string name="nav_personalization">Personalization</string>
+    <string name="nav_start_settings">Launch settings</string>
+    <string name="nav_download_settings">Download settings</string>
+
+    <string name="home_welcome">Welcome to Material Launcher</string>
+    <string name="home_what_is_this">What is this?</string>
+    <string name="cd_expand">Expand</string>
+    <string name="cd_home">Home</string>
+
+    <string name="under_construction_title">What is this?</string>
+    <string name="under_construction_body">This page is still under construction and nothing here works yet. The layout may also be undecided.</string>
+    <string name="under_construction_ok">OK</string>
+    <string name="cd_under_construction">Under construction</string>
+
+    <string name="page_versions">Versions</string>
+    <string name="page_download">Download</string>
+    <string name="page_users">Profiles</string>
+    <string name="page_personalization">Personalization</string>
+    <string name="page_start">Launch</string>
+
+    <string name="settings_section_game">Game</string>
+    <string name="settings_java_title">Java settings</string>
+    <string name="settings_java_subtitle">Java version, memory, and JVM arguments</string>
+    <string name="settings_launch_title">Launch</string>
+    <string name="settings_launch_subtitle">Version isolation, window size, and custom title</string>
+    <string name="settings_section_launcher">Launcher</string>
+    <string name="settings_download_title">Download</string>
+    <string name="settings_download_subtitle">Download source, speed limit, and cache</string>
+    <string name="settings_personalization_title">Personalization</string>
+    <string name="settings_personalization_subtitle">Theme color, background, and language</string>
+    <string name="settings_section_other">Other</string>
+    <string name="cd_settings">Settings</string>
+
+    <string name="java_global_version">Global Java version</string>
+    <string name="java_rescan">Rescan</string>
+    <string name="java_global_memory">Global JVM memory</string>
+    <string name="java_allocated_memory">Allocated memory: %1$s MB</string>
+    <string name="java_set_min_memory">Set minimum memory</string>
+    <string name="java_memory_unset_max">Minimum: not set      Maximum: %1$s MB</string>
+    <string name="java_memory_min_max">Minimum: %1$s MB      Maximum: %2$s MB</string>
+
+    <string name="not_selected">Not selected</string>
+    <string name="not_set">Not set</string>
+    <string name="action_save">Save</string>
+    <string name="action_close">Close</string>
+    <string name="action_cancel">Cancel</string>
+    <string name="action_apply">Apply</string>
+    <string name="action_add">Add</string>
+    <string name="action_back">Back</string>
+    <string name="action_clear">Clear</string>
+    <string name="action_launch">Launch</string>
+    <string name="action_start_download">Start download</string>
+
+    <string name="data_dir_title">Data directory</string>
+    <string name="data_dir_body">Launcher config, accounts, the instance list, and the Java cache are stored here. Installed builds default to the user directory (&#37;APPDATA&#37;\MaterialLauncher). Portable builds use data\ next to the exe.</string>
+    <string name="data_dir_label">Data directory (absolute path)</string>
+    <string name="data_dir_empty">Directory cannot be empty</string>
+    <string name="data_dir_saved">Saved. Restart the launcher to apply.</string>
+    <string name="data_dir_failed">Could not save: the directory is not writable or the path is invalid</string>
+
+    <string name="mirror_auto">Automatic (mirror first, then official)</string>
+    <string name="mirror_only">Mirror only (BMCLAPI)</string>
+    <string name="mirror_official">Official only (Mojang)</string>
+    <string name="mirror_title">Download source</string>
+    <string name="mirror_body">Used for the Minecraft version list, client, assets, and libraries. On networks in China, mirror or automatic is recommended.</string>
+    <string name="mirror_note">The download source applies to the next download or launch. Java (Adoptium) still uses the official source.</string>
+
+    <string name="advanced_args_title">Advanced launch arguments</string>
+    <string name="jvm_args_label">JVM arguments (space-separated, e.g. -XX:+UseG1GC)</string>
+    <string name="game_args_label">Game arguments (space-separated, e.g. --fullscreen)</string>
+
+    <string name="mc_path_title">Minecraft path</string>
+    <string name="mc_path_label">Install location</string>
+    <string name="mc_path_default">Default folder</string>
+    <string name="mc_path_launcher">Launcher folder</string>
+    <string name="mc_path_custom">Custom</string>
+    <string name="mc_dir_dialog">Choose the Minecraft folder</string>
+    <string name="mc_version_title">Minecraft version</string>
+    <string name="mc_version_label">Version</string>
+    <string name="mc_refresh">Refresh list</string>
+    <string name="java_find_again">Search again</string>
+    <string name="username_title">Username</string>
+    <string name="username_label">In-game name</string>
+    <string name="memory_title">Memory</string>
+    <string name="choose_java">Choose Java</string>
+
+    <string name="snack_java_index_done">Java index finished. Found %1$s.</string>
+    <string name="snack_java_index_failed">Java index failed: %1$s</string>
+    <string name="snack_login_ok">Signed in: %1$s</string>
+    <string name="snack_login_failed">Sign-in failed: %1$s</string>
+    <string name="snack_instance_launching">Starting instance "%1$s"… See the Logs page.</string>
+    <string name="snack_settings_saved">Settings saved</string>
+
+    <string name="sidebar_launch">Launch</string>
+    <string name="sidebar_launch_mc">Launch Minecraft</string>
+    <string name="sidebar_download">Download</string>
+    <string name="sidebar_mc_download">Minecraft download</string>
+    <string name="sidebar_java_download">Java download</string>
+    <string name="sidebar_instances">Instances</string>
+    <string name="sidebar_multi_instance">Multiple instances</string>
+    <string name="sidebar_logs">Logs</string>
+    <string name="sidebar_log_panel">Log panel</string>
+    <string name="sidebar_settings">Settings</string>
+    <string name="sidebar_account">Account</string>
+    <string name="sidebar_mc_path">Minecraft path</string>
+    <string name="sidebar_mc_version">Minecraft version</string>
+    <string name="sidebar_username">Username</string>
+    <string name="sidebar_java">Java</string>
+    <string name="sidebar_memory">Memory</string>
+    <string name="sidebar_mirror">Download source</string>
+    <string name="sidebar_advanced">Advanced arguments</string>
+    <string name="sidebar_data_dir">Data directory</string>
+
+    <string name="launch_need_selection">Choose Java, the Minecraft path, and a version first</string>
+    <string name="launch_starting">Starting…</string>
+    <string name="launch_starting_bg">Starting… Running in the background. See the Logs page.</string>
+    <string name="launch_game_ready">The game window is open</string>
+    <string name="launch_game_exited">The game has exited</string>
+    <string name="launch_java_index_done">Java index finished: found %1$s</string>
+    <string name="launch_java_index_failed">Java index failed: %1$s</string>
+    <string name="launch_indexing">Indexing Java…</string>
+    <string name="launch_index_busy">Indexing is already running</string>
+    <string name="account_online">Microsoft</string>
+    <string name="account_offline">Offline</string>
+    <string name="account_value">%1$s (%2$s)</string>
+
+    <string name="back_to_launch">Back to launch</string>
+    <string name="download_version_title">Download %1$s</string>
+    <string name="download_name_hint">Name this game environment (instance and folder). The version id is used by default.</string>
+    <string name="instance_name">Instance name</string>
+    <string name="download_name_exists">A folder with the same name will be rejected.</string>
+    <string name="progress_fetching">Fetching…</string>
+    <string name="progress_extracting">Extracting…</string>
+    <string name="eta_unknown">Time left --</string>
+    <string name="eta_seconds">%1$s s left</string>
+    <string name="eta_min_sec">%1$s min %2$s s left</string>
+    <string name="eta_hour_min">%1$s h %2$s min left</string>
+
+    <string name="logs_title">Logs</string>
+    <string name="logs_empty">No logs yet…</string>
+
+    <string name="accounts_title">Accounts</string>
+    <string name="accounts_empty">No accounts yet. Add an offline account or sign in with a Microsoft account.</string>
+    <string name="nickname">Nickname</string>
+    <string name="add_offline">Add offline account</string>
+    <string name="device_code_hint">Open this link in a browser and enter the code</string>
+    <string name="open_browser">Open browser</string>
+    <string name="copy_code">Copy code</string>
+    <string name="copied_code">Code copied to the clipboard</string>
+    <string name="waiting_auth">Waiting for authorization…</string>
+    <string name="microsoft_login">Sign in with Microsoft</string>
+    <string name="account_microsoft">Microsoft account (%1$s)</string>
+    <string name="account_offline_label">Offline account</string>
+    <string name="cd_current_account">Current account</string>
+    <string name="cd_delete">Delete</string>
+    <string name="cannot_open_browser">Could not open a browser. Open this link manually: %1$s</string>
+
+    <string name="instances_title">Game instances</string>
+    <string name="instances_intro">Each instance is its own version folder. Download Minecraft from the Download page and enter a name (the version id by default) to create one. Each instance has its own saves and settings.</string>
+    <string name="instances_empty">No instances yet. Open Download, pick a version, and enter a name to create one.</string>
+    <string name="instance_meta">Version %1$s  ·  Memory %2$s</string>
+    <string name="cd_instance_settings">Instance settings</string>
+    <string name="instance_deleted">Deleted instance %1$s</string>
+    <string name="instance_delete_failed">Could not delete the instance</string>
+    <string name="cd_delete_instance">Delete instance</string>
+    <string name="instance_settings_title">Instance settings - %1$s</string>
+    <string name="field_name">Name</string>
+    <string name="field_game_version">Game version (e.g. 1.21.1)</string>
+    <string name="field_java_path">Java path (empty = automatic)</string>
+    <string name="field_max_memory">Max memory (e.g. 4096M or 4G)</string>
+    <string name="field_extra_jvm">Extra JVM arguments (space-separated)</string>
+    <string name="instance_game_dir">Game directory: %1$s (read-only)</string>
+    <string name="instance_saved">Saved settings for %1$s</string>
+    <string name="instance_save_failed">Could not save: %1$s</string>
+</resources>

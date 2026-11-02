@@ -31,10 +31,38 @@ import cc.lanternmc.materiallauncher.api.Account
 import cc.lanternmc.materiallauncher.api.DownloadConfig
 import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.core.LauncherBackend
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_account
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_advanced
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_data_dir
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_download
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_instances
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_java
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_java_download
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_launch
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_launch_mc
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_log_panel
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_logs
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_mc_download
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_mc_path
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_mc_version
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_memory
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_mirror
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_multi_instance
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_settings
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_username
+import cc.lanternmc.materiallauncher.generated.resources.snack_instance_launching
+import cc.lanternmc.materiallauncher.generated.resources.snack_java_index_done
+import cc.lanternmc.materiallauncher.generated.resources.snack_java_index_failed
+import cc.lanternmc.materiallauncher.generated.resources.snack_login_failed
+import cc.lanternmc.materiallauncher.generated.resources.snack_login_ok
+import cc.lanternmc.materiallauncher.generated.resources.snack_settings_saved
 import cc.lanternmc.materiallauncher.ui.components.AdvancedDialog
 import cc.lanternmc.materiallauncher.ui.components.AdvancedSettingsDialogs
 import cc.lanternmc.materiallauncher.ui.pages.*
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.getString
+import org.jetbrains.compose.resources.stringResource
 
 private enum class Page { LAUNCH, DOWNLOAD, INSTANCES, LOGS }
 
@@ -87,7 +115,7 @@ fun App(backend: LauncherBackend) {
                         backend.logInfo("Java 索引完成: 找到 ${event.installations.size} 个")
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Java 索引完成，找到 ${event.installations.size} 个",
+                                message = getString(Res.string.snack_java_index_done, event.installations.size.toString()),
                                 duration = SnackbarDuration.Short,
                             )
                         }
@@ -96,7 +124,7 @@ fun App(backend: LauncherBackend) {
                         backend.logError("Java 索引错误: ${event.message}")
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "Java 索引失败: ${event.message}",
+                                message = getString(Res.string.snack_java_index_failed, event.message),
                                 duration = SnackbarDuration.Short,
                             )
                         }
@@ -112,7 +140,7 @@ fun App(backend: LauncherBackend) {
                     is LauncherEvent.AuthCompleted -> {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "登录成功: ${event.account.username}",
+                                message = getString(Res.string.snack_login_ok, event.account.username),
                                 duration = SnackbarDuration.Short,
                             )
                         }
@@ -120,7 +148,7 @@ fun App(backend: LauncherBackend) {
                     is LauncherEvent.AuthFailed -> {
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = "登录失败: ${event.message}",
+                                message = getString(Res.string.snack_login_failed, event.message),
                                 duration = SnackbarDuration.Short,
                             )
                         }
@@ -176,7 +204,9 @@ fun App(backend: LauncherBackend) {
                                 uuid = acc?.uuid ?: "00000000-0000-0000-0000-000000000000",
                                 userType = acc?.userType ?: "legacy",
                             )
-                            showMessage("实例「${instance.name}」启动中...（日志见「日志」页）")
+                            scope.launch {
+                                showMessage(getString(Res.string.snack_instance_launching, instance.name))
+                            }
                         },
                         onMessage = ::showMessage,
                     )
@@ -216,7 +246,7 @@ fun App(backend: LauncherBackend) {
                         backend.saveDownloadConfig(newConfig)
                         config = newConfig
                         advancedDialog = null
-                        showMessage("设置已保存")
+                        showMessage(getString(Res.string.snack_settings_saved))
                     }
                 },
             )
@@ -225,10 +255,10 @@ fun App(backend: LauncherBackend) {
                 modifier = Modifier.align(Alignment.CenterStart),
                 categories = listOf(
                     SidebarCategory(
-                        label = "启动",
+                        label = stringResource(Res.string.sidebar_launch),
                         icon = Icons.Default.PlayArrow,
                         items = listOf(
-                            SidebarItem("启动 Minecraft") {
+                            SidebarItem(stringResource(Res.string.sidebar_launch_mc)) {
                                 page = Page.LAUNCH
                                 launchSignal++
                             },
@@ -236,40 +266,40 @@ fun App(backend: LauncherBackend) {
                         direct = true,
                     ),
                     SidebarCategory(
-                        label = "下载",
+                        label = stringResource(Res.string.sidebar_download),
                         icon = Icons.Default.Download,
                         items = listOf(
-                            SidebarItem("Minecraft 下载") { page = Page.DOWNLOAD },
-                            SidebarItem("Java 下载") { page = Page.DOWNLOAD },
+                            SidebarItem(stringResource(Res.string.sidebar_mc_download)) { page = Page.DOWNLOAD },
+                            SidebarItem(stringResource(Res.string.sidebar_java_download)) { page = Page.DOWNLOAD },
                         ),
                     ),
                     SidebarCategory(
-                        label = "实例",
+                        label = stringResource(Res.string.sidebar_instances),
                         icon = Icons.Default.ViewList,
                         items = listOf(
-                            SidebarItem("多实例管理") { page = Page.INSTANCES },
+                            SidebarItem(stringResource(Res.string.sidebar_multi_instance)) { page = Page.INSTANCES },
                         ),
                     ),
                     SidebarCategory(
-                        label = "日志",
+                        label = stringResource(Res.string.sidebar_logs),
                         icon = Icons.Default.Article,
                         items = listOf(
-                            SidebarItem("日志面板") { page = Page.LOGS },
+                            SidebarItem(stringResource(Res.string.sidebar_log_panel)) { page = Page.LOGS },
                         ),
                     ),
                     SidebarCategory(
-                        label = "设置",
+                        label = stringResource(Res.string.sidebar_settings),
                         icon = Icons.Default.Settings,
                         items = listOf(
-                            SidebarItem("账户") { dialog = SettingsDialog.ACCOUNT },
-                            SidebarItem("MC 路径") { dialog = SettingsDialog.MC_PATH },
-                            SidebarItem("MC 版本") { dialog = SettingsDialog.MC_VERSION },
-                            SidebarItem("用户名") { dialog = SettingsDialog.USERNAME },
-                            SidebarItem("Java") { dialog = SettingsDialog.JAVA },
-                            SidebarItem("内存") { dialog = SettingsDialog.MEM },
-                            SidebarItem("下载源") { advancedDialog = AdvancedDialog.MIRROR },
-                            SidebarItem("高级参数") { advancedDialog = AdvancedDialog.ADVANCED_ARGS },
-                            SidebarItem("数据目录") { advancedDialog = AdvancedDialog.DATA_DIR },
+                            SidebarItem(stringResource(Res.string.sidebar_account)) { dialog = SettingsDialog.ACCOUNT },
+                            SidebarItem(stringResource(Res.string.sidebar_mc_path)) { dialog = SettingsDialog.MC_PATH },
+                            SidebarItem(stringResource(Res.string.sidebar_mc_version)) { dialog = SettingsDialog.MC_VERSION },
+                            SidebarItem(stringResource(Res.string.sidebar_username)) { dialog = SettingsDialog.USERNAME },
+                            SidebarItem(stringResource(Res.string.sidebar_java)) { dialog = SettingsDialog.JAVA },
+                            SidebarItem(stringResource(Res.string.sidebar_memory)) { dialog = SettingsDialog.MEM },
+                            SidebarItem(stringResource(Res.string.sidebar_mirror)) { advancedDialog = AdvancedDialog.MIRROR },
+                            SidebarItem(stringResource(Res.string.sidebar_advanced)) { advancedDialog = AdvancedDialog.ADVANCED_ARGS },
+                            SidebarItem(stringResource(Res.string.sidebar_data_dir)) { advancedDialog = AdvancedDialog.DATA_DIR },
                         ),
                     ),
                 ),

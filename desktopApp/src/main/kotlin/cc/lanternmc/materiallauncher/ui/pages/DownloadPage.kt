@@ -63,6 +63,23 @@ import cc.lanternmc.materiallauncher.api.JavaReleaseInfo
 import cc.lanternmc.materiallauncher.api.LauncherApi
 import cc.lanternmc.materiallauncher.api.LauncherEvent
 import cc.lanternmc.materiallauncher.api.MinecraftVersionEntry
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.action_cancel
+import cc.lanternmc.materiallauncher.generated.resources.action_start_download
+import cc.lanternmc.materiallauncher.generated.resources.back_to_launch
+import cc.lanternmc.materiallauncher.generated.resources.download_name_exists
+import cc.lanternmc.materiallauncher.generated.resources.download_name_hint
+import cc.lanternmc.materiallauncher.generated.resources.download_version_title
+import cc.lanternmc.materiallauncher.generated.resources.eta_hour_min
+import cc.lanternmc.materiallauncher.generated.resources.eta_min_sec
+import cc.lanternmc.materiallauncher.generated.resources.eta_seconds
+import cc.lanternmc.materiallauncher.generated.resources.eta_unknown
+import cc.lanternmc.materiallauncher.generated.resources.instance_name
+import cc.lanternmc.materiallauncher.generated.resources.progress_extracting
+import cc.lanternmc.materiallauncher.generated.resources.progress_fetching
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_java_download
+import cc.lanternmc.materiallauncher.generated.resources.sidebar_mc_download
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun DownloadPage(
@@ -135,7 +152,7 @@ fun DownloadPage(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            TextButton(onClick = onBack) { Text("返回启动页") }
+            TextButton(onClick = onBack) { Text(stringResource(Res.string.back_to_launch)) }
         }
 
         Row(
@@ -143,7 +160,7 @@ fun DownloadPage(
             horizontalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             VersionDownloadCard(
-                title = "Minecraft 下载",
+                title = stringResource(Res.string.sidebar_mc_download),
                 modifier = Modifier.weight(1f),
             ) {
                 items(mcVersions) { version ->
@@ -163,7 +180,7 @@ fun DownloadPage(
                 }
             }
             VersionDownloadCard(
-                title = "Java 下载",
+                title = stringResource(Res.string.sidebar_java_download),
                 modifier = Modifier.weight(1f),
             ) {
                 items(javaVersions) { version ->
@@ -190,11 +207,11 @@ fun DownloadPage(
         var name by remember { mutableStateOf(version.id) }
         AlertDialog(
             onDismissRequest = { pendingMcDownload = null },
-            title = { Text("下载 ${version.id}") },
+            title = { Text(stringResource(Res.string.download_version_title, version.id)) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(
-                        "为这个游戏环境起个名字（实例名/文件夹名）。默认使用版本号。",
+                        stringResource(Res.string.download_name_hint),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -203,10 +220,10 @@ fun DownloadPage(
                         onValueChange = { name = it },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
-                        label = { Text("实例名称") },
+                        label = { Text(stringResource(Res.string.instance_name)) },
                     )
                     Text(
-                        "已存在同名文件夹时会被拒绝。",
+                        stringResource(Res.string.download_name_exists),
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -216,9 +233,9 @@ fun DownloadPage(
                 Button(onClick = {
                     pendingMcDownload = null
                     api.startMinecraftDownload(version.id, name.trim())
-                }) { Text("开始下载") }
+                }) { Text(stringResource(Res.string.action_start_download)) }
             },
-            dismissButton = { TextButton(onClick = { pendingMcDownload = null }) { Text("取消") } },
+            dismissButton = { TextButton(onClick = { pendingMcDownload = null }) { Text(stringResource(Res.string.action_cancel)) } },
         )
     }
 }
@@ -277,23 +294,25 @@ private fun DownloadRow(
                 } else {
                     0f
                 }
+                val fetchingLabel = stringResource(Res.string.progress_fetching)
+                val extractingLabel = stringResource(Res.string.progress_extracting)
+                val downloaded = prog?.downloaded ?: 0
+                val total = prog?.total ?: 0
+                val speed = prog?.speedBytesPerSec ?: 0
+                val etaSec = if (speed > 0) (total - downloaded).coerceAtLeast(0) / speed else -1L
+                val etaLabel = formatEta(etaSec)
                 LinearProgressIndicator(
                     progress = { if (prog?.total ?: 0 > 0) fraction else 0f },
                     modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
                 )
                 Text(
                     text = when (prog?.status) {
-                        "fetching" -> "获取中..."
-                        "extracting" -> "解压中..."
+                        "fetching" -> fetchingLabel
+                        "extracting" -> extractingLabel
                         else -> {
-                            val d = prog?.downloaded ?: 0
-                            val t = prog?.total ?: 0
-                            val base = "${formatSize(d)} / ${formatSize(t)}"
-                            val speed = prog?.speedBytesPerSec ?: 0
+                            val base = "${formatSize(downloaded)} / ${formatSize(total)}"
                             if (speed > 0) {
-                                val remain = (t - d).coerceAtLeast(0)
-                                val etaSec = if (speed > 0) remain / speed else -1L
-                                val etaText = if (etaSec >= 0) "  ·  ${formatEta(etaSec)}" else ""
+                                val etaText = if (etaSec >= 0) "  ·  $etaLabel" else ""
                                 "$base  ·  ${formatSize(speed)}/s$etaText"
                             } else {
                                 base
@@ -334,13 +353,21 @@ fun formatSize(bytes: Long): String {
 }
 
 /** 把剩余秒数格式化为 ETA 文本（如 剩余 1 分 30 秒）。 */
+@Composable
 fun formatEta(seconds: Long): String {
-    if (seconds < 0) return "剩余 --"
-    if (seconds < 60) return "剩余 ${seconds} 秒"
-    val min = seconds / 60
-    val sec = seconds % 60
-    if (min < 60) return "剩余 ${min} 分 ${sec} 秒"
+    val safe = seconds.coerceAtLeast(0)
+    val min = safe / 60
+    val sec = safe % 60
     val hour = min / 60
     val minRemain = min % 60
-    return "剩余 ${hour} 时 ${minRemain} 分"
+    val unknown = stringResource(Res.string.eta_unknown)
+    val secondsLabel = stringResource(Res.string.eta_seconds, safe.toString())
+    val minutesLabel = stringResource(Res.string.eta_min_sec, min.toString(), sec.toString())
+    val hoursLabel = stringResource(Res.string.eta_hour_min, hour.toString(), minRemain.toString())
+    return when {
+        seconds < 0 -> unknown
+        seconds < 60 -> secondsLabel
+        min < 60 -> minutesLabel
+        else -> hoursLabel
+    }
 }

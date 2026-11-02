@@ -22,18 +22,25 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.app_name
+import cc.lanternmc.materiallauncher.i18n.AppLocale
 import cc.lanternmc.materiallauncher.ui.Home
+import org.jetbrains.compose.resources.stringResource
 
-fun main() = application {
-    val workingDir = System.getProperty("user.dir")
-    println("Working dir: $workingDir")
-    Window(
-        onCloseRequest = ::exitApplication,
-        title = "Material Launcher",
-        state = rememberWindowState(width = 1032.dp, height = 617.dp),
-        resizable = false,
-        icon = painterResource("icon.png"),
-    ) {
-        Home()
+fun main() {
+    // 第一帧之前固定语言。没配置时跟随系统；stringResource 按 JVM 默认 Locale 选 values/ 或 values-en/。
+    AppLocale.applyFromConfig()
+    application {
+        val title = stringResource(Res.string.app_name)
+        Window(
+            onCloseRequest = ::exitApplication,
+            title = title,
+            state = rememberWindowState(width = 1032.dp, height = 617.dp),
+            resizable = false,
+            icon = painterResource("icon.png"),
+        ) {
+            Home()
+        }
     }
 }

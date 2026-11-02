@@ -41,9 +41,23 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.cd_settings
+import cc.lanternmc.materiallauncher.generated.resources.settings_download_subtitle
+import cc.lanternmc.materiallauncher.generated.resources.settings_download_title
+import cc.lanternmc.materiallauncher.generated.resources.settings_java_subtitle
+import cc.lanternmc.materiallauncher.generated.resources.settings_java_title
+import cc.lanternmc.materiallauncher.generated.resources.settings_launch_subtitle
+import cc.lanternmc.materiallauncher.generated.resources.settings_launch_title
+import cc.lanternmc.materiallauncher.generated.resources.settings_personalization_subtitle
+import cc.lanternmc.materiallauncher.generated.resources.settings_personalization_title
+import cc.lanternmc.materiallauncher.generated.resources.settings_section_game
+import cc.lanternmc.materiallauncher.generated.resources.settings_section_launcher
+import cc.lanternmc.materiallauncher.generated.resources.settings_section_other
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun Settings(navController: NavHostController) {
@@ -71,7 +85,7 @@ private fun SettingsSectionGame(
         verticalArrangement = Arrangement.spacedBy(2.5.dp)
     ) {
         Text(
-            text = "游戏",
+            text = stringResource(Res.string.settings_section_game),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 14.dp),
@@ -80,8 +94,8 @@ private fun SettingsSectionGame(
             color = Color(0xFF44473D)
         )
         SettingItem(
-            title = "Java 设置",
-            subtitle = "Java 版本、内存分配、JVM 参数",
+            title = stringResource(Res.string.settings_java_title),
+            subtitle = stringResource(Res.string.settings_java_subtitle),
             icon = painterResource("coffee_24dp.svg"),
             iconSize = 24.dp,
             iconBg = Color(0xFFBCCA9C),
@@ -90,8 +104,8 @@ private fun SettingsSectionGame(
             shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
         )
         SettingItem(
-            title = "启动",
-            subtitle = "版本隔离、窗口大小、自定义标题",
+            title = stringResource(Res.string.settings_launch_title),
+            subtitle = stringResource(Res.string.settings_launch_subtitle),
             icon = painterResource("play_arrow_24dp.svg"),
             iconSize = 32.dp,
             iconBg = Color(0xFFA4CEBB),
@@ -111,7 +125,7 @@ private fun SettingsSectionLauncher(
         verticalArrangement = Arrangement.spacedBy(2.5.dp)
     ) {
         Text(
-            text = "启动器",
+            text = stringResource(Res.string.settings_section_launcher),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 14.dp),
@@ -120,8 +134,8 @@ private fun SettingsSectionLauncher(
             color = Color(0xFF44473D)
         )
         SettingItem(
-            title = "下载",
-            subtitle = "下载源、速度限制、缓存",
+            title = stringResource(Res.string.settings_download_title),
+            subtitle = stringResource(Res.string.settings_download_subtitle),
             icon = painterResource("download_24dp.svg"),
             iconSize = 26.dp,
             iconBg = Color(0xFFE0C08E),
@@ -130,8 +144,8 @@ private fun SettingsSectionLauncher(
             shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
         )
         SettingItem(
-            title = "个性化",
-            subtitle = "主题颜色、背景、语言",
+            title = stringResource(Res.string.settings_personalization_title),
+            subtitle = stringResource(Res.string.settings_personalization_subtitle),
             icon = painterResource("apparel_24dp.svg"),
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
@@ -151,7 +165,7 @@ private fun SettingsSectionOthers(
         verticalArrangement = Arrangement.spacedBy(2.5.dp)
     ) {
         Text(
-            text = "杂项",
+            text = stringResource(Res.string.settings_section_other),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(start = 14.dp),
@@ -160,8 +174,8 @@ private fun SettingsSectionOthers(
             color = Color(0xFF44473D)
         )
         SettingItem(
-            title = "下载",
-            subtitle = "下载源、速度限制、缓存",
+            title = stringResource(Res.string.settings_download_title),
+            subtitle = stringResource(Res.string.settings_download_subtitle),
             icon = painterResource("download_24dp.svg"),
             iconSize = 26.dp,
             iconBg = Color(0xFFE0C08E),
@@ -170,8 +184,8 @@ private fun SettingsSectionOthers(
             shape = RoundedCornerShape(18.dp, 18.dp, 4.dp, 4.dp)
         )
         SettingItem(
-            title = "个性化",
-            subtitle = "主题颜色、背景、语言",
+            title = stringResource(Res.string.settings_personalization_title),
+            subtitle = stringResource(Res.string.settings_personalization_subtitle),
             icon = painterResource("apparel_24dp.svg"),
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
@@ -224,7 +238,7 @@ private fun SettingItem(
             ) {
                 Icon(
                     painter = icon,
-                    contentDescription = "Settings",
+                    contentDescription = stringResource(Res.string.cd_settings),
                     modifier = Modifier.size(iconSize),
                     tint = iconTint   //图标颜色
                 )

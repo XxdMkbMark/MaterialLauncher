@@ -12,23 +12,29 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.cd_under_construction
+import cc.lanternmc.materiallauncher.generated.resources.under_construction_body
+import cc.lanternmc.materiallauncher.generated.resources.under_construction_ok
+import cc.lanternmc.materiallauncher.generated.resources.under_construction_title
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun UnderConstructionDialog(onConfirm: () -> Unit) {
     MaterialTheme(lightScheme) {
         AlertDialog(
-            icon = { Icon(Icons.Rounded.Construction, "Under Construction", Modifier.size(48.dp)) },
+            icon = { Icon(Icons.Rounded.Construction, stringResource(Res.string.cd_under_construction), Modifier.size(48.dp)) },
             onDismissRequest = {},
             title = {
-                Text("这是什么?")
+                Text(stringResource(Res.string.under_construction_title))
             },
             text = {
-                Text("当你看到这个提示时, 意味着此页面正在施工且暂无可正常使用的功能 (也可能是我没想好页面布局)")
+                Text(stringResource(Res.string.under_construction_body))
             },
             confirmButton = {
                 TextButton(onClick = { onConfirm() }) {
-                    Text("OK")
+                    Text(stringResource(Res.string.under_construction_ok))
                 }
             },
         )
