@@ -16,6 +16,7 @@
  */
 package cc.lanternmc.materiallauncher
 
+// TODO: In windows prod package, only show few java but not all.Waka
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
