@@ -121,7 +121,7 @@ private fun SettingsSectionLauncher(
         )
         SettingItem(
             title = "下载",
-            subtitle = "下载源、速度限制、缓存",
+            subtitle = "下载源、速度限制、缓存1",
             icon = painterResource("download_24dp.svg"),
             iconSize = 26.dp,
             iconBg = Color(0xFFE0C08E),
