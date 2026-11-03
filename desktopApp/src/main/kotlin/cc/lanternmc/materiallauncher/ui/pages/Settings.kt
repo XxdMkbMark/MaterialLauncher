@@ -41,9 +41,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.apparel_24dp
+import cc.lanternmc.materiallauncher.generated.resources.coffee_24dp
+import cc.lanternmc.materiallauncher.generated.resources.download_24dp
+import cc.lanternmc.materiallauncher.generated.resources.play_arrow_24dp
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun Settings(navController: NavHostController) {
@@ -82,7 +88,7 @@ private fun SettingsSectionGame(
         SettingItem(
             title = "Java 设置",
             subtitle = "Java 版本、内存分配、JVM 参数",
-            icon = painterResource("coffee_24dp.svg"),
+            icon = painterResource(Res.drawable.coffee_24dp),
             iconSize = 24.dp,
             iconBg = Color(0xFFBCCA9C),
             iconTint = Color(0xFF293412),
@@ -92,7 +98,7 @@ private fun SettingsSectionGame(
         SettingItem(
             title = "启动",
             subtitle = "版本隔离、窗口大小、自定义标题",
-            icon = painterResource("play_arrow_24dp.svg"),
+            icon = painterResource(Res.drawable.play_arrow_24dp),
             iconSize = 32.dp,
             iconBg = Color(0xFFA4CEBB),
             iconTint = Color(0xFF0E3729),
@@ -121,8 +127,8 @@ private fun SettingsSectionLauncher(
         )
         SettingItem(
             title = "下载",
-            subtitle = "下载源、速度限制、缓存1",
-            icon = painterResource("download_24dp.svg"),
+            subtitle = "下载源、速度限制、缓存 ",
+            icon = painterResource(Res.drawable.download_24dp),
             iconSize = 26.dp,
             iconBg = Color(0xFFE0C08E),
             iconTint = Color(0xFF3F2E07),
@@ -162,7 +168,7 @@ private fun SettingsSectionOthers(
         SettingItem(
             title = "下载",
             subtitle = "下载源、速度限制、缓存",
-            icon = painterResource("download_24dp.svg"),
+            icon = painterResource(Res.drawable.download_24dp),
             iconSize = 26.dp,
             iconBg = Color(0xFFE0C08E),
             iconTint = Color(0xFF3F2E07),
@@ -172,7 +178,7 @@ private fun SettingsSectionOthers(
         SettingItem(
             title = "个性化",
             subtitle = "主题颜色、背景、语言",
-            icon = painterResource("apparel_24dp.svg"),
+            icon = painterResource(Res.drawable.apparel_24dp),
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
             iconTint = Color(0xFF601303),
