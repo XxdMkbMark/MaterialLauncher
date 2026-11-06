@@ -138,7 +138,7 @@ private fun SettingsSectionLauncher(
         SettingItem(
             title = "个性化",
             subtitle = "主题颜色、背景、语言",
-            icon = painterResource("apparel_24dp.svg"),
+            icon = painterResource(Res.drawable.apparel_24dp),
             iconSize = 28.dp,
             iconBg = Color(0xFFFBB4A2),
             iconTint = Color(0xFF601303),

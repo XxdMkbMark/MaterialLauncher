@@ -6,21 +6,29 @@ import androidx.compose.material.icons.rounded.Download
 import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.apparel_24dp
+import cc.lanternmc.materiallauncher.generated.resources.coffee_24dp
+import cc.lanternmc.materiallauncher.generated.resources.download_24dp
+import cc.lanternmc.materiallauncher.generated.resources.home_24dp
+import cc.lanternmc.materiallauncher.generated.resources.play_arrow_24dp
+import org.jetbrains.compose.resources.DrawableResource
 
 enum class Destination (  // 在此处定义所有需要跳转的页面
     val route: String,
     val label: String,
-    val icon: ImageVector,
+    val icon: DrawableResource,
     val showInNavigationRail: Boolean = false    // 是否在侧边栏中显示
 ) {
-    HOME("home", "主页", Icons.Rounded.Home),
-    DOWNLOAD("download", "下载", Icons.Rounded.Download, showInNavigationRail = true),
-    USERS("users", "档案", Icons.Rounded.Person, showInNavigationRail = true),
-    VERSIONS("versions","版本", Icons.Rounded.Checklist, showInNavigationRail = true),
-    SETTINGS("settings", "设置", Icons.Rounded.Settings, showInNavigationRail = true),
-    JAVA_SETTINGS("java_settings", "Java 设置", Icons.Rounded.Settings),
-    PERSONALIZATION_SETTINGS("personalization_settings", "个性化设置", Icons.Rounded.Settings),
-    START_SETTINGS("start_settings", "启动设置", Icons.Rounded.Settings),
-    DOWNLOAD_SETTINGS("download_settings", "下载设置", Icons.Rounded.Settings),
+    HOME("home", "主页", Res.drawable.home_24dp),
+    DOWNLOAD("download", "下载", Res.drawable.download_24dp, showInNavigationRail = true),
+    USERS("users", "档案", Res.drawable.apparel_24dp, showInNavigationRail = true),
+    VERSIONS("versions","版本", Res.drawable.apparel_24dp, showInNavigationRail = true),
+    SETTINGS("settings", "设置", Res.drawable.apparel_24dp, showInNavigationRail = true),
+    JAVA_SETTINGS("java_settings", "Java 设置", Res.drawable.coffee_24dp),
+    PERSONALIZATION_SETTINGS("personalization_settings", "个性化设置", Res.drawable.apparel_24dp),
+    START_SETTINGS("start_settings", "启动设置", Res.drawable.play_arrow_24dp),
+    DOWNLOAD_SETTINGS("download_settings", "下载设置", Res.drawable.download_24dp),
 }

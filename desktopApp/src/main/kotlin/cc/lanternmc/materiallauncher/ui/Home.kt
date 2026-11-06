@@ -34,12 +34,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import cc.lanternmc.materiallauncher.generated.resources.Res
+import cc.lanternmc.materiallauncher.generated.resources.apparel_24dp
+import cc.lanternmc.materiallauncher.generated.resources.home_24dp
+import cc.lanternmc.materiallauncher.generated.resources.menu_24dp
 import cc.lanternmc.materiallauncher.ui.components.UnderConstructionDialog
 import cc.lanternmc.materiallauncher.ui.navigation.AppNavHost
 import cc.lanternmc.materiallauncher.ui.navigation.Destination
 import cc.lanternmc.materiallauncher.ui.navigation.navigateTo
 import cc.lanternmc.materiallauncher.ui.theme.lightScheme
 import cc.lanternmc.materiallauncher.viewmodel.JavaScannerViewModel
+import org.jetbrains.compose.resources.painterResource
 
 @Composable
 fun HomePage(navController: NavHostController) {
@@ -111,7 +116,7 @@ fun Home(modifier: Modifier = Modifier) {
                                 },
                                 icon = {
                                     Icon(
-                                        imageVector = Icons.Rounded.Menu,
+                                        painter = painterResource(Res.drawable.menu_24dp),
                                         contentDescription = "展开",
                                     )
                                 },
@@ -130,7 +135,7 @@ fun Home(modifier: Modifier = Modifier) {
                                 contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.Home,
+                                    painter = painterResource(Res.drawable.home_24dp),
                                     contentDescription = "主页",
                                     modifier = Modifier.size(24.dp),
                                 )
@@ -151,7 +156,7 @@ fun Home(modifier: Modifier = Modifier) {
                                         selectedDestination = index
                                     },
                                     icon = {
-                                        Icon(destination.icon, contentDescription = "")
+                                        Icon(painter = painterResource(destination.icon), contentDescription = "")
                                     },
                                     label = { Text(text = destination.label, textAlign = TextAlign.Center) }
                                 )
