@@ -63,7 +63,7 @@ fun Settings(navController: NavHostController) {
         ) {
             SettingsSectionGame(navController = navController)
             SettingsSectionLauncher(navController = navController)
-            SettingsSectionOthers(navController = navController)
+            SettingsSectionMisc(navController = navController)
         }
     }
 }
@@ -149,7 +149,7 @@ private fun SettingsSectionLauncher(
 }
 
 @Composable
-private fun SettingsSectionOthers(
+private fun SettingsSectionMisc(
     navController: NavHostController
 ) {
     Column(
